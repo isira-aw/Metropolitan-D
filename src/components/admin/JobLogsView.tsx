@@ -3,6 +3,58 @@ import { Calendar, MapPin, Clock, User, Search } from 'lucide-react';
 import { JobEventLog } from '../../types';
 import { jobEventLogAPI } from '../../services/api';
 
+// --- Simple Map Component ---
+const SimpleMap: React.FC<{ latitude: number; longitude: number; address: string }> = ({
+  latitude,
+  longitude,
+  address,
+}) => {
+  const openInGoogleMaps = () => {
+    const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="p-6">
+      <h3 className="text-xl font-bold text-white mb-4">Location Details</h3>
+      <div className="space-y-4">
+        <div className="bg-slate-700/50 rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-slate-400">Address:</span>
+              <p className="text-white font-medium">{address}</p>
+            </div>
+            <div>
+              <span className="text-slate-400">Coordinates:</span>
+              <p className="text-white font-medium">
+                {latitude.toFixed(6)}, {longitude.toFixed(6)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={openInGoogleMaps}
+            className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Open in Google Maps</span>
+          </button>
+
+          <button
+            onClick={() => navigator.clipboard.writeText(`${latitude}, ${longitude}`)}
+            className="flex items-center justify-center space-x-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <span>Copy Coordinates</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Job Logs View Component with Popup Modal ---
 export const JobLogsView: React.FC = () => {
   const [logs, setLogs] = useState<JobEventLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -10,15 +62,16 @@ export const JobLogsView: React.FC = () => {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+  const [selectedLog, setSelectedLog] = useState<JobEventLog | null>(null);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
       const startDateTime = `${dateRange.startDate} 00:00:00`;
       const endDateTime = `${dateRange.endDate} 23:59:59`;
-      
+
       const response = await jobEventLogAPI.getLogs(startDateTime, endDateTime);
-      
+
       if (response.status === 'success') {
         setLogs(response.data);
       }
@@ -31,7 +84,7 @@ export const JobLogsView: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [dateRange]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDateRange({
@@ -61,6 +114,14 @@ export const JobLogsView: React.FC = () => {
     }
   };
 
+  const openLogDetails = (log: JobEventLog) => {
+    setSelectedLog(log);
+  };
+
+  const closeLogDetails = () => {
+    setSelectedLog(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Date Range Filter */}
@@ -82,7 +143,7 @@ export const JobLogsView: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               End Date
@@ -98,7 +159,7 @@ export const JobLogsView: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <button
             onClick={fetchLogs}
             disabled={loading}
@@ -123,15 +184,19 @@ export const JobLogsView: React.FC = () => {
             Job Event Logs ({logs.length})
           </h3>
         </div>
-        
+
         <div className="divide-y divide-slate-200 dark:divide-slate-700">
           {logs.map((log) => (
-            <div key={log.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <div
+              key={log.id}
+              className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+              onClick={() => openLogDetails(log)}
+            >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      className={`px-3 py-1 rounded-full  text-xs font-medium ${getStatusColor(
                         log.workstatuslog
                       )}`}
                     >
@@ -141,29 +206,23 @@ export const JobLogsView: React.FC = () => {
                       Job ID: {log.jobid}
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-slate-600 dark:text-slate-400">
                     <div className="flex items-center space-x-2">
                       <User className="w-4 h-4" />
                       <span>{log.name} ({log.email})</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <MapPin className="w-4 h-4" />
                       <span>{log.location || 'No location'}</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Clock className="w-4 h-4" />
                       <span>{formatDateTime(log.eventTime)}</span>
                     </div>
                   </div>
-                  
-                  {log.generatorid && (
-                    <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                      Generator ID: {log.generatorid}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -184,6 +243,53 @@ export const JobLogsView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Popup Modal for Log Details */}
+      {selectedLog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-lg w-11/12 md:w-1/3">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Job Log Details
+              </h3>
+              <button
+                onClick={closeLogDetails}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              >
+                X
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* <div>
+                <strong>Job ID:</strong> {selectedLog.jobid}
+              </div>
+              <div>
+                <strong>Status:</strong> {selectedLog.workstatuslog}
+              </div>
+              <div>
+                <strong>Employee Name:</strong> {selectedLog.name}
+              </div>
+              <div>
+                <strong>Location:</strong> {selectedLog.location || 'No location'}
+              </div>
+              <div>
+                <strong>Event Time:</strong> {formatDateTime(selectedLog.eventTime)}
+              </div> */}
+
+              {selectedLog.location && selectedLog.location.includes(',') && (
+                <SimpleMap
+                  latitude={parseFloat(selectedLog.location.split(',')[0].trim())}
+                  longitude={parseFloat(selectedLog.location.split(',')[1].trim())}
+                  address={selectedLog.location}
+                />
+              )}
+
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
