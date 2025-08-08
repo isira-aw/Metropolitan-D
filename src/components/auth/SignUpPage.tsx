@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { UserPlus, Mail, Lock, User, Shield } from 'lucide-react';
-import { authAPI } from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState } from "react";
+import { UserPlus, Mail, Lock, User, Shield } from "lucide-react";
+import { authAPI } from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface SignUpPageProps {
   onSwitchToLogin: () => void;
@@ -9,31 +9,31 @@ interface SignUpPageProps {
 
 export const SignUpPage: React.FC<SignUpPageProps> = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'employee' as 'admin' | 'employee',
+    name: "",
+    email: "",
+    password: "",
+    role: "employee" as "admin" | "employee",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const response = await authAPI.signUp(formData);
-      
-      if (response.status === 'success') {
+
+      if (response.status === "success") {
         // Auto-login after successful signup
         const loginResponse = await authAPI.signIn({
           email: formData.email,
           password: formData.password,
         });
-        
-        if (loginResponse.status === 'success' && loginResponse.data) {
+
+        if (loginResponse.status === "success" && loginResponse.data) {
           login(
             {
               id: 0, // Will be updated from backend
@@ -48,13 +48,15 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({ onSwitchToLogin }) => {
         setError(response.message);
       }
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError("Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -65,11 +67,16 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({ onSwitchToLogin }) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <UserPlus className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <div className="bg-blue-100 dark:bg-blue-900/30 w-40 h-20 rounded-lg overflow-hidden mx-auto mb-4">
+            <img
+              src="https://rainbowpages.lk/uploads/listings/logo/m/metro37.jpg"
+              alt="Metropolitan Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Create Account</h1>
-          <p className="text-slate-600 dark:text-slate-400">Join our job card management system</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            Create Account
+          </h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -170,7 +177,7 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({ onSwitchToLogin }) => {
 
         <div className="mt-6 text-center">
           <p className="text-slate-600 dark:text-slate-400">
-            Already have an account?{' '}
+            Already have an account?{" "}
             <button
               onClick={onSwitchToLogin}
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"

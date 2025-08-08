@@ -7,7 +7,7 @@ import { JobCardDetails } from './JobCardDetails';
 
 export const EmployeeDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const [jobCards, setJobCards] = useState<JobCard[]>([]);
+  const [jobCards, setJobCards] = useState<Record<string, JobCard[]>>({});
   const [selectedJobCard, setSelectedJobCard] = useState<JobCard | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,13 +23,25 @@ export const EmployeeDashboard: React.FC = () => {
       const response = await jobCardAPI.getByAssignedEmployee(user.email);
       
       if (response.status === 'success') {
-        setJobCards(response.data);
+        const groupedByDate = groupJobCardsByDate(response.data);
+        setJobCards(groupedByDate);
       }
     } catch (error) {
       console.error('Failed to load job cards:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const groupJobCardsByDate = (jobCards: JobCard[]) => {
+    return jobCards.reduce((acc: Record<string, JobCard[]>, jobCard) => {
+      const date = jobCard.date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(jobCard);
+      return acc;
+    }, {});
   };
 
   const handleJobCardUpdated = () => {
@@ -106,57 +118,64 @@ export const EmployeeDashboard: React.FC = () => {
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobCards.map((jobCard) => (
-              <div
-                key={jobCard.id}
-                onClick={() => setSelectedJobCard(jobCard)}
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-                      {jobCard.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Job ID: {jobCard.jobid}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                      jobCard.workstatus
-                    )}`}
+          Object.keys(jobCards).map((date) => (
+            <div key={date} className="mb-8">
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                {new Date(date).toLocaleDateString()}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {jobCards[date].map((jobCard) => (
+                  <div
+                    key={jobCard.id}
+                    onClick={() => setSelectedJobCard(jobCard)}
+                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer"
                   >
-                    {jobCard.workstatus || 'Pending'}
-                  </span>
-                </div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                          {jobCard.title}
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Job ID: {jobCard.jobid}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          jobCard.workstatus
+                        )}`}
+                      >
+                        {jobCard.workstatus || 'Pending'}
+                      </span>
+                    </div>
 
-                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
-                  {jobCard.description}
-                </p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
+                      {jobCard.description}
+                    </p>
 
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                    <Clock className="w-4 h-4 mr-2" />
-                    <span>{jobCard.hoursnumber} hours allocated</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
+                        <Clock className="w-4 h-4 mr-2" />
+                        <span>{jobCard.hoursnumber} hours allocated</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        <span>Generator: {jobCard.generatorid}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
+                        <Briefcase className="w-4 h-4 mr-2" />
+                        <span>Click to manage</span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    <span>Generator: {jobCard.generatorid}</span>
-                  </div>
-                  
-                  <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    <span>Click to manage</span>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
 
-        {!loading && jobCards.length === 0 && (
+        {!loading && Object.keys(jobCards).length === 0 && (
           <div className="text-center py-12">
             <div className="text-slate-400 dark:text-slate-500 mb-4">
               <Briefcase className="w-16 h-16 mx-auto" />

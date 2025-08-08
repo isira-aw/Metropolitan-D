@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { LogIn, Mail, Lock } from 'lucide-react';
-import { authAPI } from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState } from "react";
+import { LogIn, Mail, Lock } from "lucide-react";
+import { authAPI } from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface LoginPageProps {
   onSwitchToSignUp: () => void;
@@ -9,27 +9,27 @@ interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignUp }) => {
   const [credentials, setCredentials] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const response = await authAPI.signIn(credentials);
-      
-      if (response.status === 'success' && response.data) {
+
+      if (response.status === "success" && response.data) {
         login(
           {
             id: 0, // Will be updated from backend
             email: credentials.email,
-            name: '', // Will be updated from backend
+            name: "", // Will be updated from backend
             role: response.data.role,
           },
           response.data.token
@@ -38,7 +38,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignUp }) => {
         setError(response.message);
       }
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
+      console.error("Login failed:", err);
+      setError("Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -55,11 +56,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignUp }) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <LogIn className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          <div className="bg-blue-100 dark:bg-blue-900/30 w-40 h-20 rounded-lg overflow-hidden mx-auto mb-4">
+            <img
+              src="https://rainbowpages.lk/uploads/listings/logo/m/metro37.jpg"
+              alt="Metropolitan Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h1>
-          <p className="text-slate-600 dark:text-slate-400">Sign in to your account</p>
+
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            Welcome Back
+          </h1>
+        
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -123,7 +131,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignUp }) => {
 
         <div className="mt-6 text-center">
           <p className="text-slate-600 dark:text-slate-400">
-            Don't have an account?{' '}
+            Don't have an account?{" "}
             <button
               onClick={onSwitchToSignUp}
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
