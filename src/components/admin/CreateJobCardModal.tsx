@@ -10,7 +10,7 @@ interface CreateJobCardModalProps {
 }
 
 export const CreateJobCardModal: React.FC<CreateJobCardModalProps> = ({
-  employees,
+  // employees,
   onClose,
   onJobCardCreated,
 }) => {
@@ -43,6 +43,7 @@ export const CreateJobCardModal: React.FC<CreateJobCardModalProps> = ({
         setError(response.message);
       }
     } catch (err) {
+      console.error('Failed to create job card:', err);
       setError('Failed to create job card. Please try again.');
     } finally {
       setLoading(false);
@@ -169,7 +170,7 @@ export const CreateJobCardModal: React.FC<CreateJobCardModalProps> = ({
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Assign to Employee (Optional)
             </label>
@@ -186,7 +187,7 @@ export const CreateJobCardModal: React.FC<CreateJobCardModalProps> = ({
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {error && (
             <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">

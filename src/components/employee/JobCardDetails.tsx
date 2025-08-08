@@ -58,6 +58,7 @@ export const JobCardDetails: React.FC<JobCardDetailsProps> = ({
         setError(response.message);
       }
     } catch (err) {
+      console.error('Failed to update job card:', err);
       setError('Failed to update job card. Please try again.');
     } finally {
       setLoading(false);
