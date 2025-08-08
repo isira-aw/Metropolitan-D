@@ -120,10 +120,10 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-slate-800 shadow-lg">
+      <div className="w-64 bg-white dark:bg-slate-800 shadow-lg h-screen sticky top-0">
         <div className="p-6 border-b border-slate-200 dark:border-slate-700">
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Admin Panel</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Welcome, {user?.name}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Welcome {user?.name}</p>
         </div>
         
         <nav className="p-4">
