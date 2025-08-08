@@ -20,6 +20,38 @@ export const JobCardList: React.FC<JobCardListProps> = ({
   const [editingJobCard, setEditingJobCard] = useState<JobCard | null>(null);
   const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
 
+  // Categorizing job cards by date
+  const categorizeJobCardsByDate = (jobCards: JobCard[]) => {
+    return jobCards.reduce((acc, jobCard) => {
+      const date = jobCard.date; // Assuming date is in "YYYY-MM-DD" format
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(jobCard);
+      return acc;
+    }, {} as Record<string, JobCard[]>);
+  };
+
+  const categorizedJobCards = categorizeJobCardsByDate(jobCards);
+
+  // Sorting dates to have today's date first
+const sortedDates = Object.keys(categorizedJobCards).sort((a, b) => {
+  // Parse the date strings into Date objects for comparison
+  const dateA = new Date(a);
+  const dateB = new Date(b);
+
+  // Compare dates, placing today's date at the top
+  if (dateA.toDateString() === new Date().toDateString()) {
+    return -1; // Move today's date to the top
+  } else if (dateB.toDateString() === new Date().toDateString()) {
+    return 1;
+  }
+
+  // Compare dates numerically using getTime() (most recent first)
+  return dateB.getTime() - dateA.getTime();
+});
+
+
   const handleDelete = async (jobid: string) => {
     if (!confirm('Are you sure you want to delete this job card?')) {
       return;
@@ -59,77 +91,84 @@ export const JobCardList: React.FC<JobCardListProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {jobCards.map((jobCard) => (
-          <div
-            key={jobCard.id}
-            className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-                  {jobCard.title}
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Job ID: {jobCard.jobid}
-                </p>
-              </div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                  jobCard.workstatus
-                )}`}
+      {sortedDates.map((date) => (
+        <div key={date}>
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+            Job Cards for {date}
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {categorizedJobCards[date].map((jobCard) => (
+              <div
+                key={jobCard.id}
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow"
               >
-                {jobCard.workstatus || 'Pending'}
-              </span>
-            </div>
-
-            <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
-              {jobCard.description}
-            </p>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                <Clock className="w-4 h-4 mr-2" />
-                <span>{jobCard.hoursnumber} hours</span>
-              </div>
-              
-              {jobCard.assignTo && (
-                <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                  <User className="w-4 h-4 mr-2" />
-                  <span>{jobCard.assignTo.name}</span>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                      {jobCard.title}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Job ID: {jobCard.jobid}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      jobCard.workstatus
+                    )}`}
+                  >
+                    {jobCard.workstatus || 'Pending'}
+                  </span>
                 </div>
-              )}
-              
-              <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                <MapPin className="w-4 h-4 mr-2" />
-                <span>Generator: {jobCard.generatorid}</span>
-              </div>
-            </div>
 
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setEditingJobCard(jobCard)}
-                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                title="Edit job card"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(jobCard.jobid)}
-                disabled={deletingJobId === jobCard.jobid}
-                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                title="Delete job card"
-              >
-                {deletingJobId === jobCard.jobid ? (
-                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-              </button>
-            </div>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
+                  {jobCard.description}
+                </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
+                    <Clock className="w-4 h-4 mr-2" />
+                    <span>{jobCard.hoursnumber} hours</span>
+                  </div>
+                  
+                  {jobCard.assignTo && (
+                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
+                      <User className="w-4 h-4 mr-2" />
+                      <span>{jobCard.assignTo.name}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    <span>Generator: {jobCard.generatorid}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={() => setEditingJobCard(jobCard)}
+                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Edit job card"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(jobCard.jobid)}
+                    disabled={deletingJobId === jobCard.jobid}
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                    title="Delete job card"
+                  >
+                    {deletingJobId === jobCard.jobid ? (
+                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
       {jobCards.length === 0 && (
         <div className="text-center py-12">
