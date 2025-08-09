@@ -1,166 +1,298 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+import {
+  ApiResponse,
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  EmployeeResponse,
+  UpdateEmployeeRequest,
+  GeneratorResponse,
+  CreateGeneratorRequest,
+  JobCardResponse,
+  CreateJobCardRequest,
+  MiniJobCardResponse,
+  UpdateMiniJobCardRequest,
+  CreateMiniJobCardRequest,
+  LogResponse,
+  HealthResponse
+} from '../types/api';
 
-// Get auth token from localStorage
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken');
-};
+const BASE_URL = 'http://localhost:8080/api';
 
-// Common headers for authenticated requests
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-  };
-};
-
-// Generic API request function
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+class ApiService {
+  private getAuthHeaders(): HeadersInit {
+    const token = localStorage.getItem('authToken');
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
   }
 
-  return response.json();
+  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    if (response.status === 401) {
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+      throw new Error('Unauthorized');
+    }
+
+    const data = await response.json();
+    return data;
+  }
+
+  // Authentication
+  async login(credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
+    });
+    return this.handleResponse<AuthResponse>(response);
+  }
+
+  async register(userData: RegisterRequest): Promise<ApiResponse<EmployeeResponse>> {
+    const response = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    return this.handleResponse<EmployeeResponse>(response);
+  }
+
+  // Employees
+  async getAllEmployees(): Promise<ApiResponse<EmployeeResponse[]>> {
+    const response = await fetch(`${BASE_URL}/employees`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<EmployeeResponse[]>(response);
+  }
+
+  async getEmployee(email: string): Promise<ApiResponse<EmployeeResponse>> {
+    const response = await fetch(`${BASE_URL}/employees/${encodeURIComponent(email)}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<EmployeeResponse>(response);
+  }
+
+  async updateEmployee(email: string, data: UpdateEmployeeRequest): Promise<ApiResponse<EmployeeResponse>> {
+    const response = await fetch(`${BASE_URL}/employees/${encodeURIComponent(email)}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<EmployeeResponse>(response);
+  }
+
+  async deleteEmployee(email: string): Promise<ApiResponse<null>> {
+    const response = await fetch(`${BASE_URL}/employees/${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<null>(response);
+  }
+
+  // Generators
+  async getAllGenerators(): Promise<ApiResponse<GeneratorResponse[]>> {
+    const response = await fetch(`${BASE_URL}/generators`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<GeneratorResponse[]>(response);
+  }
+
+  async getGenerator(id: string): Promise<ApiResponse<GeneratorResponse>> {
+    const response = await fetch(`${BASE_URL}/generators/${id}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<GeneratorResponse>(response);
+  }
+
+  async createGenerator(data: CreateGeneratorRequest): Promise<ApiResponse<GeneratorResponse>> {
+    const response = await fetch(`${BASE_URL}/generators`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<GeneratorResponse>(response);
+  }
+
+  async updateGenerator(id: string, data: CreateGeneratorRequest): Promise<ApiResponse<GeneratorResponse>> {
+    const response = await fetch(`${BASE_URL}/generators/${id}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<GeneratorResponse>(response);
+  }
+
+  async deleteGenerator(id: string): Promise<ApiResponse<null>> {
+    const response = await fetch(`${BASE_URL}/generators/${id}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<null>(response);
+  }
+
+  async searchGenerators(name: string): Promise<ApiResponse<GeneratorResponse[]>> {
+    const response = await fetch(`${BASE_URL}/generators/search?name=${encodeURIComponent(name)}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<GeneratorResponse[]>(response);
+  }
+
+  // Job Cards
+  async getAllJobCards(): Promise<ApiResponse<JobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/jobcards`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<JobCardResponse[]>(response);
+  }
+
+  async getJobCard(id: string): Promise<ApiResponse<JobCardResponse>> {
+    const response = await fetch(`${BASE_URL}/jobcards/${id}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<JobCardResponse>(response);
+  }
+
+  async createServiceJob(data: CreateJobCardRequest): Promise<ApiResponse<JobCardResponse>> {
+    const response = await fetch(`${BASE_URL}/jobcards/service`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<JobCardResponse>(response);
+  }
+
+  async createRepairJob(data: CreateJobCardRequest): Promise<ApiResponse<JobCardResponse>> {
+    const response = await fetch(`${BASE_URL}/jobcards/repair`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<JobCardResponse>(response);
+  }
+
+  async getJobCardsByType(type: 'SERVICE' | 'REPAIR'): Promise<ApiResponse<JobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/jobcards/type/${type}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<JobCardResponse[]>(response);
+  }
+
+  async getJobCardsByEmployee(email: string): Promise<ApiResponse<JobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/jobcards/employee/${encodeURIComponent(email)}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<JobCardResponse[]>(response);
+  }
+
+  async getJobCardsByGenerator(generatorId: string): Promise<ApiResponse<JobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/jobcards/generator/${generatorId}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<JobCardResponse[]>(response);
+  }
+
+  // Mini Job Cards
+  async getAllMiniJobCards(): Promise<ApiResponse<MiniJobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/minijobcards`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<MiniJobCardResponse[]>(response);
+  }
+
+  async getMiniJobCard(id: string): Promise<ApiResponse<MiniJobCardResponse>> {
+    const response = await fetch(`${BASE_URL}/minijobcards/${id}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<MiniJobCardResponse>(response);
+  }
+
+  async getMiniJobCardsByEmployee(email: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/minijobcards/employee/${encodeURIComponent(email)}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<MiniJobCardResponse[]>(response);
+  }
+
+  async getMiniJobCardsByJobCard(jobCardId: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/minijobcards/jobcard/${jobCardId}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<MiniJobCardResponse[]>(response);
+  }
+
+  async getMiniJobCardsByStatus(status: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+    const response = await fetch(`${BASE_URL}/minijobcards/status/${status}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<MiniJobCardResponse[]>(response);
+  }
+
+  async updateMiniJobCard(id: string, data: UpdateMiniJobCardRequest): Promise<ApiResponse<MiniJobCardResponse>> {
+    const response = await fetch(`${BASE_URL}/minijobcards/${id}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<MiniJobCardResponse>(response);
+  }
+
+  async createMiniJobCard(data: CreateMiniJobCardRequest): Promise<ApiResponse<MiniJobCardResponse>> {
+    const response = await fetch(`${BASE_URL}/minijobcards`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<MiniJobCardResponse>(response);
+  }
+
+  // Activity Logs
+  async getAllLogs(): Promise<ApiResponse<LogResponse[]>> {
+    const response = await fetch(`${BASE_URL}/logs`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<LogResponse[]>(response);
+  }
+
+  async getLog(id: string): Promise<ApiResponse<LogResponse>> {
+    const response = await fetch(`${BASE_URL}/logs/${id}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<LogResponse>(response);
+  }
+
+  async getLogsByEmployee(email: string): Promise<ApiResponse<LogResponse[]>> {
+    const response = await fetch(`${BASE_URL}/logs/employee/${encodeURIComponent(email)}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<LogResponse[]>(response);
+  }
+
+  async getLogsByDate(date: string): Promise<ApiResponse<LogResponse[]>> {
+    const response = await fetch(`${BASE_URL}/logs/date/${date}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<LogResponse[]>(response);
+  }
+
+  async getLogsByEmployeeAndDate(email: string, date: string): Promise<ApiResponse<LogResponse[]>> {
+    const response = await fetch(`${BASE_URL}/logs/employee/${encodeURIComponent(email)}/date/${date}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<LogResponse[]>(response);
+  }
+
+  async getRecentLogs(hours: number = 24): Promise<ApiResponse<LogResponse[]>> {
+    const response = await fetch(`${BASE_URL}/logs/recent?hours=${hours}`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<LogResponse[]>(response);
+  }
+
+  // Health Check
+  async healthCheck(): Promise<ApiResponse<HealthResponse>> {
+    const response = await fetch(`${BASE_URL}/health`);
+    return this.handleResponse<HealthResponse>(response);
+  }
 }
 
-// Authentication APIs
-export const authAPI = {
-  signUp: async (userData: {
-    email: string;
-    password: string;
-    name: string;
-    role: 'admin' | 'employee';
-  }) => {
-    return apiRequest('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  },
-
-  signIn: async (credentials: { email: string; password: string }) => {
-    return apiRequest('/auth/signin', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-  },
-};
-
-// Job Card APIs
-export const jobCardAPI = {
-  create: async (jobCardData: {
-    jobid: string;
-    generatorid: string;
-    title: string;
-    description: string;
-    hoursnumber: number;
-    workstatus: string;
-    assignto?: string | null;
-  }) => {
-    return apiRequest('/job-cards/create', {
-      method: 'POST',
-      body: JSON.stringify(jobCardData),
-    });
-  },
-
-  getAll: async () => {
-    return apiRequest('/job-cards/get-all', {
-      method: 'POST',
-    });
-  },
-
-  getByAssignedEmployee: async (email: string) => {
-    return apiRequest('/job-cards/get-by-assign', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  },
-
-  updateByAdmin: async (jobid: string, updateData: {
-    title?: string;
-    description?: string;
-    hoursnumber?: number;
-    workstatus?: string;
-    generatorid?: string;
-    assignTo?: string;
-  }) => {
-    return apiRequest(`/job-cards/update-admin/${jobid}`, {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    });
-  },
-
-  updateByEmployee: async (jobid: string, updateData: {
-    workstatuslog: string;
-    location: string;
-  }) => {
-    return apiRequest(`/job-cards/update-empo/${jobid}`, {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    });
-  },
-
-  delete: async (jobid: string) => {
-    return apiRequest(`/job-cards/delete/${jobid}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// User APIs
-export const userAPI = {
-  getEmployees: async () => {
-    return apiRequest('/users/employees', {
-      method: 'GET',
-    });
-  },
-};
-
-// Job Event Log APIs
-export const jobEventLogAPI = {
-  getLogs: async (startDate: string, endDate: string) => {
-    const params = new URLSearchParams({
-      startDate,
-      endDate,
-    });
-    return apiRequest(`/job-event-logs/get-logs?${params}`, {
-      method: 'GET',
-    });
-  },
-};
-
-// Location API (mock implementation for getting current location)
-export const locationAPI = {
-  getCurrentLocation: (): Promise<{ latitude: number; longitude: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported by this browser.'));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (error) => {
-          reject(error);
-        }
-      );
-    });
-  },
-};
+export const apiService = new ApiService();
