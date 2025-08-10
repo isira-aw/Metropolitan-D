@@ -312,22 +312,6 @@ export const MyTasks: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
-            <select
-              value={updateForm.status || ''}
-              onChange={(e) => setUpdateForm(prev => ({ ...prev, status: e.target.value as TaskStatus }))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="PENDING">Pending</option>
-              <option value="ASSIGNED">Assigned</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="ON_HOLD">On Hold</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </div>
-          
-          <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Current Location
               <span className="text-xs text-slate-500 ml-1">(Auto-detected)</span>
@@ -411,6 +395,21 @@ export const MyTasks: React.FC = () => {
                 </select>
               </div>
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+            <select
+              value={updateForm.status || ''}
+              onChange={(e) => setUpdateForm(prev => ({ ...prev, status: e.target.value as TaskStatus }))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="PENDING">Pending</option>
+              <option value="ASSIGNED">Assigned</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="ON_HOLD">On Hold</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
           </div>
           
           <div className="flex justify-end space-x-3 pt-4">
