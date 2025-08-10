@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, User, Filter, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { LogResponse, EmployeeResponse } from '../types/api';
@@ -214,9 +214,9 @@ export const ActivityLogs: React.FC = () => {
                       </p>
                     </div>
                     
-                    <p className="text-sm text-slate-600 mb-1">
+                    {/* <p className="text-sm text-slate-600 mb-1">
                       {log.action.replace(/_/g, ' ').toLowerCase()}
-                    </p>
+                    </p> */}
                     
                     {log.status && (
                       <p className="text-sm text-slate-500">

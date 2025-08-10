@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Calendar, CheckSquare } from 'lucide-react';
+import { Clock, MapPin, Calendar, CheckSquare, Navigation } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { MiniJobCardResponse, TaskStatus, UpdateMiniJobCardRequest } from '../types/api';
@@ -16,6 +16,11 @@ export const MyTasks: React.FC = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updatingTask, setUpdatingTask] = useState<MiniJobCardResponse | null>(null);
   const [updateForm, setUpdateForm] = useState<UpdateMiniJobCardRequest>({});
+  
+  // Location states
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [locationAddress, setLocationAddress] = useState<string>('');
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
     if (user?.email) {
@@ -26,6 +31,76 @@ export const MyTasks: React.FC = () => {
   useEffect(() => {
     filterTasks();
   }, [tasks, filterStatus]);
+
+  // Get current location when modal opens
+  useEffect(() => {
+    if (showUpdateModal && !currentLocation) {
+      getCurrentLocation();
+    }
+  }, [showUpdateModal]);
+
+  // Fetch address when location changes
+  useEffect(() => {
+    if (currentLocation) {
+      fetchLocationAddress();
+    }
+  }, [currentLocation]);
+
+  const getCurrentLocation = () => {
+    setLocationLoading(true);
+    
+    if (!navigator.geolocation) {
+      console.error('Geolocation is not supported by this browser');
+      setLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const location = { lat: latitude, lon: longitude };
+        setCurrentLocation(location);
+        
+        // Store the coordinates as the location value for API
+        setUpdateForm(prev => ({ 
+          ...prev, 
+          location: `${latitude},${longitude}` 
+        }));
+        
+        setLocationLoading(false);
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        setLocationAddress('Unable to get current location');
+        setLocationLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  };
+
+  const fetchLocationAddress = async () => {
+    if (!currentLocation) return;
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${currentLocation.lat}&lon=${currentLocation.lon}&format=json`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLocationAddress(data.display_name || 'Address not found');
+      } else {
+        setLocationAddress('Unable to fetch address');
+      }
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      setLocationAddress('Error fetching address');
+    }
+  };
 
   const loadTasks = async () => {
     if (!user?.email) return;
@@ -60,6 +135,10 @@ export const MyTasks: React.FC = () => {
       date: task.date
     });
     setShowUpdateModal(true);
+    
+    // Reset location states for fresh data
+    setCurrentLocation(null);
+    setLocationAddress('');
   };
 
   const handleSaveUpdate = async () => {
@@ -72,6 +151,8 @@ export const MyTasks: React.FC = () => {
         setShowUpdateModal(false);
         setUpdatingTask(null);
         setUpdateForm({});
+        setCurrentLocation(null);
+        setLocationAddress('');
       }
     } catch (error) {
       console.error('Error updating task:', error);
@@ -102,18 +183,6 @@ export const MyTasks: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case 'COMPLETED': return 'text-green-600';
-      case 'IN_PROGRESS': return 'text-blue-600';
-      case 'PENDING': return 'text-yellow-600';
-      case 'ASSIGNED': return 'text-purple-600';
-      case 'ON_HOLD': return 'text-orange-600';
-      case 'CANCELLED': return 'text-red-600';
-      default: return 'text-slate-600';
-    }
   };
 
   if (loading) {
@@ -235,6 +304,8 @@ export const MyTasks: React.FC = () => {
           setShowUpdateModal(false);
           setUpdatingTask(null);
           setUpdateForm({});
+          setCurrentLocation(null);
+          setLocationAddress('');
         }}
         title="Update Task"
         size="md"
@@ -255,16 +326,43 @@ export const MyTasks: React.FC = () => {
               <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Location</label>
-            <input
-              type="text"
-              value={updateForm.location || ''}
-              onChange={(e) => setUpdateForm(prev => ({ ...prev, location: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter location"
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Current Location
+              <span className="text-xs text-slate-500 ml-1">(Auto-detected)</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={locationAddress || 'Getting current location...'}
+                readOnly
+                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
+                placeholder="Detecting location..."
+              />
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                {locationLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                ) : (
+                  <Navigation className="w-4 h-4 text-slate-400" />
+                )}
+              </div>
+            </div>
+            {currentLocation && (
+              <p className="text-xs text-slate-500 mt-1">
+                Coordinates: {currentLocation.lat.toFixed(6)}, {currentLocation.lon.toFixed(6)}
+              </p>
+            )}
+            {!locationLoading && !currentLocation && (
+              <button
+                onClick={getCurrentLocation}
+                className="text-xs text-blue-600 hover:text-blue-700 mt-1"
+              >
+                Retry getting location
+              </button>
+            )}
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
@@ -277,20 +375,52 @@ export const MyTasks: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Time</label>
-              <input
-                type="time"
-                value={updateForm.time || ''}
-                onChange={(e) => setUpdateForm(prev => ({ ...prev, time: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={updateForm.time?.split(':')[0] || ''}
+                  onChange={(e) => {
+                    const hour = e.target.value;
+                    const minute = updateForm.time?.split(':')[1] || '00';
+                    setUpdateForm(prev => ({ ...prev, time: `${hour}:${minute}` }));
+                  }}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Hour</option>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i.toString().padStart(2, '0')}>
+                      {i.toString().padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
+                <span className="flex items-center text-slate-500 px-2">:</span>
+                <select
+                  value={updateForm.time?.split(':')[1] || ''}
+                  onChange={(e) => {
+                    const minute = e.target.value;
+                    const hour = updateForm.time?.split(':')[0] || '00';
+                    setUpdateForm(prev => ({ ...prev, time: `${hour}:${minute}` }));
+                  }}
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Min</option>
+                  {Array.from({ length: 60 }, (_, i) => (
+                    <option key={i} value={i.toString().padStart(2, '0')}>
+                      {i.toString().padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
+          
           <div className="flex justify-end space-x-3 pt-4">
             <button
               onClick={() => {
                 setShowUpdateModal(false);
                 setUpdatingTask(null);
                 setUpdateForm({});
+                setCurrentLocation(null);
+                setLocationAddress('');
               }}
               className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
             >
@@ -298,7 +428,8 @@ export const MyTasks: React.FC = () => {
             </button>
             <button
               onClick={handleSaveUpdate}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              disabled={locationLoading}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
             >
               Update Task
             </button>

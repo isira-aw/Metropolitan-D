@@ -54,6 +54,7 @@ export const Login: React.FC = () => {
             </div>
             <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
             <p className="text-slate-600 mt-2">Sign in to Employee Management System</p>
+            <p className="text-slate-600 mt-2">isira.aw@gmail.com</p>
           </div>
 
           {error && (
