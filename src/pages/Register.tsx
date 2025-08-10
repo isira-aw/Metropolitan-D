@@ -34,6 +34,7 @@ export const Register: React.FC = () => {
         setError(response.message || 'Registration failed');
       }
     } catch (error) {
+      console.error('Registration error:', error);
       setError('Network error. Please check if the server is running.');
     } finally {
       setLoading(false);

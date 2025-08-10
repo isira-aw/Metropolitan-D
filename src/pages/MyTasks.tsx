@@ -199,7 +199,7 @@ export const MyTasks: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">My Tasks</h1>
-        <p className="text-slate-600 mt-2">Manage your assigned tasks and update their status</p>
+        {/* <p className="text-slate-600 mt-2">Manage your assigned tasks and update their status</p> */}
       </div>
 
       {/* Status Filter */}
