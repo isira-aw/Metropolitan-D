@@ -8,7 +8,7 @@ import {
   CheckSquare,
   Activity,
   LogOut,
-  Settings,
+  // Settings,
   Menu,
   X,
 } from "lucide-react";
@@ -35,15 +35,19 @@ export const Sidebar: React.FC = () => {
     { to: "/employees", icon: Users, label: "Employees" },
     { to: "/generators", icon: Zap, label: "Generators" },
     { to: "/jobs", icon: ClipboardList, label: "Job Cards" },
-    { to: "/tasks", icon: CheckSquare, label: "All Tasks" },
+    // { to: "/tasks", icon: CheckSquare, label: "All Tasks" },
     { to: "/activity", icon: Activity, label: "Activity Logs" },
   ];
 
+  // const employeeNavItems = [
+  //   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  //   { to: "/generators", icon: Zap, label: "Generators" },
+  //   { to: "/my-tasks", icon: CheckSquare, label: "My Tasks" },
+  //   { to: "/my-activity", icon: Activity, label: "My Activity" },
+  // ];
+
   const employeeNavItems = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/generators", icon: Zap, label: "Generators" },
     { to: "/my-tasks", icon: CheckSquare, label: "My Tasks" },
-    { to: "/my-activity", icon: Activity, label: "My Activity" },
   ];
 
   const navItems = isAdmin ? adminNavItems : employeeNavItems;

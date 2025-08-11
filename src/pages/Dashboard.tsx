@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Zap, ClipboardList, CheckSquare, TrendingUp, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
-import { EmployeeResponse, GeneratorResponse, JobCardResponse, MiniJobCardResponse, LogResponse } from '../types/api';
+import { MiniJobCardResponse, LogResponse } from '../types/api';
 import { LoadingSpinner } from '../components/UI/LoadingSpinner';
 import { StatusBadge } from '../components/UI/StatusBadge';
 

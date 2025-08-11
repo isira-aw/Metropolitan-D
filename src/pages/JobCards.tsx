@@ -214,7 +214,7 @@ export const JobCards: React.FC = () => {
                     {job.generator.name}
                   </h3>
                   <p className="text-sm text-slate-500">
-                    {job.generator.capacity}
+                    {job.generator.capacity} KW
                   </p>
                 </div>
               </div>
