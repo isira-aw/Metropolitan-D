@@ -53,11 +53,15 @@ export const Register: React.FC = () => {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Settings className="w-8 h-8 text-white" />
+            <div className="w-40 h-0 pb-[20%] relative flex items-center justify-center mx-auto mb-4">
+              <img
+                src="https://github.com/isira-aw/Metropolitan-B/blob/deploy/metro37.jpg?raw=true"
+                alt="cropped-image"
+                className="object-cover w-full h-full absolute top-0 left-0"
+              />
             </div>
             <h1 className="text-3xl font-bold text-slate-900">Create Account</h1>
-            <p className="text-slate-600 mt-2">Join the Employee Management System</p>
+            
           </div>
 
           {error && (
