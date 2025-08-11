@@ -103,10 +103,7 @@ export interface MiniJobCardResponse {
 }
 
 export interface UpdateMiniJobCardRequest {
-  estimatedTime: any;
-  estimatedTime: any;
-  estimatedTime: any;
-  estimatedTime: any;
+  estimatedTime: unknown;
   status?: TaskStatus;
   location?: string;
   time?: string;
