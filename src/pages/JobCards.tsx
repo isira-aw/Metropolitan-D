@@ -142,7 +142,7 @@ export const JobCards: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Job Cards</h1>
-          <p className="text-slate-600 mt-2">Manage service and repair jobs</p>
+          {/* <p className="text-slate-600 mt-2">Manage service and repair jobs</p> */}
         </div>
         <button
           onClick={() => setShowCreateModal(true)}

@@ -1,19 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Zap, 
-  ClipboardList, 
-  CheckSquare, 
+import {
+  LayoutDashboard,
+  Users,
+  Zap,
+  ClipboardList,
+  CheckSquare,
   Activity,
   LogOut,
-  Settings
+  Settings,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const Sidebar: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
 
   const adminNavItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -33,17 +48,33 @@ export const Sidebar: React.FC = () => {
 
   const navItems = isAdmin ? adminNavItems : employeeNavItems;
 
-  return (
-    <div className="bg-slate-900 text-white w-64 min-h-screen flex flex-col">
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const SidebarContent = () => (
+    <>
       <div className="p-6 border-b border-slate-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <Settings className="w-6 h-6" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Settings className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">EMS</h1>
+              <p className="text-slate-400 text-sm">Management System</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold">EMS</h1>
-            <p className="text-slate-400 text-sm">Management System</p>
-          </div>
+          {/* Close button for mobile */}
+          {isMobile && (
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors ml-2"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -53,6 +84,7 @@ export const Sidebar: React.FC = () => {
             <li key={item.to}>
               <NavLink
                 to={item.to}
+                onClick={() => isMobile && setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
@@ -83,13 +115,68 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
         <button
-          onClick={logout}
+          onClick={() => {
+            logout();
+            setIsMobileMenuOpen(false);
+          }}
           className="w-full flex items-center space-x-3 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors"
         >
           <LogOut className="w-4 h-4" />
           <span>Logout</span>
         </button>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Hamburger Menu Button */}
+      {isMobile && (
+        <button
+          onClick={toggleMobileMenu}
+          className="fixed top-4 ml-0 z-50 bg-transparent text-slate-900 p-3 rounded-lg  transition-colors md:hidden"
+          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6 " />}
+        </button>
+      )}
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex bg-slate-900 text-white w-64 min-h-screen flex-col">
+        <SidebarContent />
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && isMobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Mobile Sidebar */}
+          <div className="fixed top-0 left-0 h-full bg-slate-900 text-white w-64 z-50 transform transition-transform duration-300 ease-in-out md:hidden">
+            <div className="flex flex-col h-full">
+              <SidebarContent />
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+};
+
+// Layout wrapper component (optional - for easier integration)
+export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 md:ml-0 p-4 md:p-6">
+        <div className="pt-16 md:pt-0">
+          {children}
+        </div>
+      </main>
     </div>
   );
 };

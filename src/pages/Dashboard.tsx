@@ -161,9 +161,9 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-600 mt-2">
+        {/* <p className="text-slate-600 mt-2">
           {isAdmin ? 'System overview and management' : 'Your personal workspace'}
-        </p>
+        </p> */}
       </div>
 
       {/* Stats Cards */}

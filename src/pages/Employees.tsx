@@ -104,12 +104,12 @@ export const Employees: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Employees</h1>
-          <p className="text-slate-600 mt-2">Manage your team members</p>
+          {/* <p className="text-slate-600 mt-2">Manage your team members</p> */}
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+        {/* <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
           <Plus className="w-4 h-4" />
           <span>Add Employee</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Search */}
