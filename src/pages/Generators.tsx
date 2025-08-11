@@ -25,13 +25,14 @@ export const Generators: React.FC = () => {
     loadGenerators();
   }, []);
 
-  useEffect(() => {
-    if (searchTerm) {
-      searchGenerators();
-    } else {
-      setFilteredGenerators(generators);
-    }
-  }, [generators, searchTerm]);
+useEffect(() => {
+  if (searchTerm) {
+    searchGenerators(searchTerm.toLowerCase());
+  } else {
+    setFilteredGenerators(generators);
+  }
+}, [generators, searchTerm]);
+
 
   const loadGenerators = async () => {
     try {
@@ -47,16 +48,17 @@ export const Generators: React.FC = () => {
     }
   };
 
-  const searchGenerators = async () => {
-    try {
-      const response = await apiService.searchGenerators(searchTerm);
-      if (response.status && response.data) {
-        setFilteredGenerators(response.data);
-      }
-    } catch (error) {
-      console.error('Error searching generators:', error);
-    }
-  };
+const searchGenerators = async (term: string) => {
+  try {
+    const filtered = generators.filter((generator) =>
+      generator.name.toLowerCase().includes(term.toLowerCase())
+    );
+
+    setFilteredGenerators(filtered);
+  } catch (error) {
+    console.error('Error searching generators:', error);
+  }
+};
 
   const handleCreate = async () => {
     try {
@@ -179,7 +181,7 @@ export const Generators: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-900">{generator.name}</h3>
-                  <p className="text-sm text-slate-500">{generator.capacity}</p>
+                  <p className="text-sm text-slate-500">{generator.capacity} KW</p>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
@@ -250,9 +252,9 @@ export const Generators: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Capacity</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Capacity (KW)</label>
               <input
-                type="text"
+                type="number"
                 value={formData.capacity}
                 onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -335,9 +337,9 @@ export const Generators: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Capacity</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Capacity (KW)</label>
               <input
-                type="text"
+                type="number"
                 value={formData.capacity}
                 onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

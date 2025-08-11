@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Mail, Phone } from 'lucide-react';
+import {  Search, Edit, Trash2, Phone } from 'lucide-react';
 import { apiService } from '../services/api';
 import { EmployeeResponse, UpdateEmployeeRequest } from '../types/api';
 import { LoadingSpinner } from '../components/UI/LoadingSpinner';
@@ -239,7 +239,7 @@ export const Employees: React.FC = () => {
               <option value="ADMIN">Admin</option>
             </select>
           </div>
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">New Password (optional)</label>
             <input
               type="password"
@@ -248,7 +248,7 @@ export const Employees: React.FC = () => {
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Leave blank to keep current password"
             />
-          </div>
+          </div> */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               onClick={() => setShowEditModal(false)}
