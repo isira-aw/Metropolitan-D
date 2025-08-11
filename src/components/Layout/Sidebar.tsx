@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -10,9 +10,9 @@ import {
   LogOut,
   Settings,
   Menu,
-  X
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+  X,
+} from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const Sidebar: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -26,24 +26,24 @@ export const Sidebar: React.FC = () => {
     };
 
     checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
   const adminNavItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/employees', icon: Users, label: 'Employees' },
-    { to: '/generators', icon: Zap, label: 'Generators' },
-    { to: '/jobs', icon: ClipboardList, label: 'Job Cards' },
-    { to: '/tasks', icon: CheckSquare, label: 'All Tasks' },
-    { to: '/activity', icon: Activity, label: 'Activity Logs' },
+    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/employees", icon: Users, label: "Employees" },
+    { to: "/generators", icon: Zap, label: "Generators" },
+    { to: "/jobs", icon: ClipboardList, label: "Job Cards" },
+    { to: "/tasks", icon: CheckSquare, label: "All Tasks" },
+    { to: "/activity", icon: Activity, label: "Activity Logs" },
   ];
 
   const employeeNavItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/generators', icon: Zap, label: 'Generators' },
-    { to: '/my-tasks', icon: CheckSquare, label: 'My Tasks' },
-    { to: '/my-activity', icon: Activity, label: 'My Activity' },
+    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/generators", icon: Zap, label: "Generators" },
+    { to: "/my-tasks", icon: CheckSquare, label: "My Tasks" },
+    { to: "/my-activity", icon: Activity, label: "My Activity" },
   ];
 
   const navItems = isAdmin ? adminNavItems : employeeNavItems;
@@ -57,11 +57,16 @@ export const Sidebar: React.FC = () => {
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Settings className="w-6 h-6" />
+            <div className="">
+              <img
+                src="https://github.com/isira-aw/Metropolitan-B/blob/deploy/metro37.jpg?raw=true"
+                alt="settings"
+                className="w-10 h-10 rounded-lg"
+              />
             </div>
+
             <div>
-              <h1 className="text-xl font-bold">EMS</h1>
+              <h1 className="text-xl font-bold">Metropolitan</h1>
               <p className="text-slate-400 text-sm">Management System</p>
             </div>
           </div>
@@ -88,8 +93,8 @@ export const Sidebar: React.FC = () => {
                 className={({ isActive }) =>
                   `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`
                 }
               >
@@ -105,7 +110,11 @@ export const Sidebar: React.FC = () => {
         <div className="flex items-center space-x-3 mb-4">
           <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
             <span className="text-sm font-medium">
-              {user?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              {user?.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
@@ -135,9 +144,13 @@ export const Sidebar: React.FC = () => {
         <button
           onClick={toggleMobileMenu}
           className="fixed top-4 ml-0 z-50 bg-transparent text-slate-900 p-3 rounded-lg  transition-colors md:hidden"
-          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
         >
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6 " />}
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6 " />
+          )}
         </button>
       )}
 
@@ -154,7 +167,7 @@ export const Sidebar: React.FC = () => {
             className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          
+
           {/* Mobile Sidebar */}
           <div className="fixed top-0 left-0 h-full bg-slate-900 text-white w-64 z-50 transform transition-transform duration-300 ease-in-out md:hidden">
             <div className="flex flex-col h-full">
@@ -168,14 +181,14 @@ export const Sidebar: React.FC = () => {
 };
 
 // Layout wrapper component (optional - for easier integration)
-export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppLayout: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
       <main className="flex-1 md:ml-0 p-4 md:p-6">
-        <div className="pt-16 md:pt-0">
-          {children}
-        </div>
+        <div className="pt-16 md:pt-0">{children}</div>
       </main>
     </div>
   );
