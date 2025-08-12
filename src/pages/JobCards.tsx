@@ -32,6 +32,7 @@ export const JobCards: React.FC = () => {
   const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR">(
     "ALL"
   );
+  const [filterDate, setFilterDate] = useState<string>("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<JobCardResponse | null>(null);
@@ -51,7 +52,7 @@ export const JobCards: React.FC = () => {
 
   useEffect(() => {
     filterJobCards();
-  }, [jobCards, filterType]);
+  }, [jobCards, filterType, filterDate]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -86,11 +87,19 @@ export const JobCards: React.FC = () => {
   };
 
   const filterJobCards = () => {
-    if (filterType === "ALL") {
-      setFilteredJobCards(jobCards);
-    } else {
-      setFilteredJobCards(jobCards.filter((job) => job.jobType === filterType));
+    let filtered = jobCards;
+
+    // Filter by job type
+    if (filterType !== "ALL") {
+      filtered = filtered.filter((job) => job.jobType === filterType);
     }
+
+    // Filter by date
+    if (filterDate) {
+      filtered = filtered.filter((job) => job.date === filterDate);
+    }
+
+    setFilteredJobCards(filtered);
   };
 
   const handleCreateJob = async () => {
@@ -150,6 +159,16 @@ export const JobCards: React.FC = () => {
     }));
   };
 
+  const clearAllFilters = () => {
+    setFilterType("ALL");
+    setFilterDate("");
+  };
+
+  const setTodayFilter = () => {
+    const today = new Date().toISOString().split("T")[0];
+    setFilterDate(today);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -184,7 +203,6 @@ export const JobCards: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Job Cards</h1>
-          <p className="text-slate-600 mt-2">Manage service and repair jobs</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -195,30 +213,114 @@ export const JobCards: React.FC = () => {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* Enhanced Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center space-x-4">
-          <Filter className="w-5 h-5 text-slate-400" />
-          <div className="flex space-x-2">
-            {["ALL", "SERVICE", "REPAIR"].map((type) => (
+        <div className="space-y-4">
+          {/* Job Type Filter */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Filter by Job Type</label>
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <div className="flex space-x-2">
+                {["ALL", "SERVICE", "REPAIR"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() =>
+                      setFilterType(type as "ALL" | "SERVICE" | "REPAIR")
+                    }
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      filterType === type
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Date Filter */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Filter by Date
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {filterDate && (
+                  <button
+                    onClick={() => setFilterDate("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                    title="Clear date filter"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-end">
               <button
-                key={type}
-                onClick={() =>
-                  setFilterType(type as "ALL" | "SERVICE" | "REPAIR")
-                }
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filterType === type
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                onClick={setTodayFilter}
+                className="w-full bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                {type}
+                Today's Jobs
               </button>
-            ))}
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={clearAllFilters}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+
+            <div className="flex items-end justify-end">
+              <div className="text-sm text-slate-500">
+                {filteredJobCards.length} job card{filteredJobCards.length !== 1 ? 's' : ''}
+              </div>
+            </div>
           </div>
-          <div className="ml-auto text-sm text-slate-500">
-            {filteredJobCards.length} job card{filteredJobCards.length !== 1 ? 's' : ''}
-          </div>
+
+          {/* Active Filters Display */}
+          {(filterType !== "ALL" || filterDate) && (
+            <div className="flex items-center space-x-2 pt-2 border-t border-slate-200">
+              <span className="text-sm text-slate-600">Active filters:</span>
+              {filterType !== "ALL" && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {filterType}
+                  <button 
+                    onClick={() => setFilterType("ALL")} 
+                    className="ml-1 text-blue-600 hover:text-blue-800"
+                    title="Remove job type filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {filterDate && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {formatDate(filterDate)}
+                  <button 
+                    onClick={() => setFilterDate("")} 
+                    className="ml-1 text-green-600 hover:text-green-800"
+                    title="Remove date filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -349,11 +451,23 @@ export const JobCards: React.FC = () => {
         <div className="text-center py-12">
           <Settings className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">
-            {filterType === "ALL" 
-              ? "No job cards found" 
-              : `No ${filterType.toLowerCase()} job cards found`
+            {filterDate && filterType !== "ALL"
+              ? `No ${filterType.toLowerCase()} job cards for ${formatDate(filterDate)}`
+              : filterDate
+              ? `No job cards for ${formatDate(filterDate)}`
+              : filterType !== "ALL"
+              ? `No ${filterType.toLowerCase()} job cards found`
+              : "No job cards found"
             }
           </p>
+          {(filterType !== "ALL" || filterDate) && (
+            <button
+              onClick={clearAllFilters}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       )}
 
