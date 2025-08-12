@@ -7,6 +7,9 @@ import {
   Users,
   Wrench,
   Settings,
+  Trash2,
+  AlertTriangle,
+  MoreVertical,
 } from "lucide-react";
 import { apiService } from "../services/api";
 import {
@@ -30,6 +33,9 @@ export const JobCards: React.FC = () => {
     "ALL"
   );
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<JobCardResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [jobType, setJobType] = useState<"SERVICE" | "REPAIR">("SERVICE");
   const [formData, setFormData] = useState<CreateJobCardRequest>({
     generatorId: "",
@@ -37,6 +43,7 @@ export const JobCards: React.FC = () => {
     estimatedTime: "",
     employeeEmails: [],
   });
+  const [showDropdown, setShowDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -45,6 +52,13 @@ export const JobCards: React.FC = () => {
   useEffect(() => {
     filterJobCards();
   }, [jobCards, filterType]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowDropdown(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -96,6 +110,28 @@ export const JobCards: React.FC = () => {
     }
   };
 
+  const handleDeleteJob = async () => {
+    if (!jobToDelete) return;
+    
+    try {
+      setDeleting(true);
+      const response = await apiService.deleteJobCard(jobToDelete.jobCardId);
+      
+      if (response.status) {
+        await loadData(); // Refresh the list
+        setShowDeleteModal(false);
+        setJobToDelete(null);
+      } else {
+        alert("Failed to delete job card: " + (response.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      alert("Failed to delete job card. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       generatorId: "",
@@ -129,6 +165,12 @@ export const JobCards: React.FC = () => {
     });
   };
 
+  const openDeleteModal = (job: JobCardResponse) => {
+    setJobToDelete(job);
+    setShowDeleteModal(true);
+    setShowDropdown(null);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -142,7 +184,7 @@ export const JobCards: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Job Cards</h1>
-          {/* <p className="text-slate-600 mt-2">Manage service and repair jobs</p> */}
+          <p className="text-slate-600 mt-2">Manage service and repair jobs</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -174,6 +216,9 @@ export const JobCards: React.FC = () => {
               </button>
             ))}
           </div>
+          <div className="ml-auto text-sm text-slate-500">
+            {filteredJobCards.length} job card{filteredJobCards.length !== 1 ? 's' : ''}
+          </div>
         </div>
       </div>
 
@@ -182,9 +227,40 @@ export const JobCards: React.FC = () => {
         {filteredJobCards.map((job) => (
           <div
             key={job.jobCardId}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative"
           >
-            <div className="flex items-start justify-between mb-4">
+            {/* Actions Dropdown */}
+            <div className="absolute top-4 right-4">
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDropdown(showDropdown === job.jobCardId ? null : job.jobCardId);
+                  }}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                  aria-label="More actions"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+
+                {showDropdown === job.jobCardId && (
+                  <div 
+                    className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => openDeleteModal(job)}
+                      className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Job Card</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-start justify-between mb-4 pr-8">
               <div className="flex items-center space-x-3">
                 <div
                   className={`w-12 h-12 rounded-lg flex items-center justify-center ${
@@ -272,9 +348,81 @@ export const JobCards: React.FC = () => {
       {filteredJobCards.length === 0 && (
         <div className="text-center py-12">
           <Settings className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">No job cards found</p>
+          <p className="text-slate-500">
+            {filterType === "ALL" 
+              ? "No job cards found" 
+              : `No ${filterType.toLowerCase()} job cards found`
+            }
+          </p>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setJobToDelete(null);
+        }}
+        title="Delete Job Card"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-slate-900 mb-2">
+                Are you sure you want to delete this job card?
+              </h3>
+              {jobToDelete && (
+                <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">Generator:</span> {jobToDelete.generator.name}</p>
+                    <p><span className="font-medium">Type:</span> {jobToDelete.jobType}</p>
+                    <p><span className="font-medium">Date:</span> {formatDate(jobToDelete.date)}</p>
+                    <p><span className="font-medium">Employees:</span> {jobToDelete.assignedEmployees.length} assigned</p>
+                  </div>
+                </div>
+              )}
+              <p className="text-sm text-slate-600">
+                This action cannot be undone. This will permanently delete the job card and all related mini job card tasks assigned to employees.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              onClick={() => {
+                setShowDeleteModal(false);
+                setJobToDelete(null);
+              }}
+              disabled={deleting}
+              className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteJob}
+              disabled={deleting}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+            >
+              {deleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Job Card</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Create Job Modal */}
       <Modal
