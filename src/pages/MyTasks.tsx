@@ -284,26 +284,34 @@ export const MyTasks: React.FC = () => {
     setLocationAddress("");
   };
 
-  const handleSaveUpdate = async () => {
-    if (!updatingTask) return;
+const handleSaveUpdate = async () => {
+  if (!updatingTask) return;
 
-    try {
-      const response = await apiService.updateMiniJobCard(
-        updatingTask.miniJobCardId,
-        updateForm
-      );
-      if (response.status) {
-        await loadTasks();
-        setShowUpdateModal(false);
-        setUpdatingTask(null);
-        setUpdateForm({});
-        setCurrentLocation(null);
-        setLocationAddress("");
-      }
-    } catch (error) {
-      console.error("Error updating task:", error);
-    }
+  const updatedForm = {
+    ...updateForm,
+    location: `${currentLocation?.lat},${currentLocation?.lon}`, 
+    coordinates: {
+      lat: currentLocation?.lat,
+      lon: currentLocation?.lon,
+    },
   };
+    try {
+    const response = await apiService.updateMiniJobCard(
+      updatingTask.miniJobCardId,
+      updatedForm
+    );
+    if (response.status) {
+      await loadTasks();
+      setShowUpdateModal(false);
+      setUpdatingTask(null);
+      setUpdateForm({});
+      setCurrentLocation(null);
+      setLocationAddress("");
+    }
+  } catch (error) {
+    console.error("Error updating task:", error);
+  }
+};
 
   const clearFilters = () => {
     setFilterDate("");
@@ -324,13 +332,21 @@ export const MyTasks: React.FC = () => {
     });
   };
 
+  // const formatTime = (timeString: string) => {
+  //   if (!timeString) return "No time set";
+  //   return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //   });
+  // };
+
   const formatTime = (timeString: string) => {
-    if (!timeString) return "No time set";
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  if (!timeString) return "No time set";
+  
+  const date = new Date(`2000-01-01T${timeString}`);
+  return date.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
+};
+
 
   // Get current time in Sri Lanka (Colombo) timezone
   const isToday = (dateString: string) => {
@@ -573,7 +589,7 @@ export const MyTasks: React.FC = () => {
                 {task.generatorCapacity && (
                   <p className="text-sm text-slate-600 mb-1">
                     <span className="font-medium">Capacity:</span>{" "}
-                    {task.generatorCapacity}
+                    {task.generatorCapacity} <>KW</>
                   </p>
                 )}
                 {task.generatorDescription && (
