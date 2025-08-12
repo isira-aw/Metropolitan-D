@@ -162,6 +162,20 @@ class ApiService {
     return this.handleResponse<JobCardResponse>(response);
   }
 
+
+  async deleteJobCard(jobCardId: string) {
+    const response = await fetch(`${BASE_URL}/jobcards/${jobCardId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+    
+    return {
+      status: response.ok,
+      message: response.ok ? 'Job card deleted successfully' : 'Failed to delete job card'
+    };
+  }
+
+
   async createRepairJob(data: CreateJobCardRequest): Promise<ApiResponse<JobCardResponse>> {
     const response = await fetch(`${BASE_URL}/jobcards/repair`, {
       method: 'POST',
