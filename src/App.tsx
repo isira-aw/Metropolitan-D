@@ -14,11 +14,7 @@ import { ActivityLogs } from './pages/ActivityLogs';
 
 // Role-based redirect component
 const RoleBasedRedirect: React.FC = () => {
-  const { user, isAdmin, loading } = useAuth();
-  
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
+  const { user, isAdmin } = useAuth();
   
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -29,16 +25,19 @@ const RoleBasedRedirect: React.FC = () => {
   return <Navigate to={isAdmin ? "/dashboard" : "/my-tasks"} replace />;
 };
 
-// Enhanced ProtectedRoute component for admin-only routes
-const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <ProtectedRoute adminOnly>
-      {children}
-    </ProtectedRoute>
-  );
+// Strict Admin-only route protection - Completely blocks employees
+const AdminOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAdmin } = useAuth();
+  
+  // If not admin (i.e., employee), redirect to my-tasks with no access
+  if (!isAdmin) {
+    return <Navigate to="/my-tasks" replace />;
+  }
+  
+  return <>{children}</>;
 };
 
-// Employee route protection - ONLY allows /my-tasks for employees
+// Employee-only route protection - Blocks admins from employee routes
 const EmployeeOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin } = useAuth();
   
@@ -50,80 +49,132 @@ const EmployeeOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }
   return <>{children}</>;
 };
 
-// Block employees from accessing any other routes
-const BlockEmployeeRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAdmin } = useAuth();
+// // Universal access route - Both admins and employees can access
+// const UniversalRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+//   const { loading } = useAuth();
   
-  // If employee tries to access admin/other routes, redirect to my-tasks
-  if (!isAdmin) {
-    return <Navigate to="/my-tasks" replace />;
-  }
+//   if (loading) {
+//     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+//   }
   
-  return <>{children}</>;
-};
+//   return <>{children}</>;
+// };
 
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public routes - No authentication required */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       
       {/* Root redirect based on role */}
       <Route path="/" element={<RoleBasedRedirect />} />
       
-      {/* Protected routes with Layout */}
+      {/* Protected routes with Layout - Requires authentication */}
       <Route path="/" element={
         <ProtectedRoute>
           <Layout />
         </ProtectedRoute>
       }>
-        {/* Admin-only routes - Employees will be redirected to /my-tasks */}
+        
+        {/* ===== ADMIN-ONLY ROUTES ===== */}
+        {/* These routes are completely blocked for employees */}
+        
         <Route path="dashboard" element={
-          <BlockEmployeeRoute>
+          <AdminOnlyRoute>
             <Dashboard />
-          </BlockEmployeeRoute>
+          </AdminOnlyRoute>
         } />
         
         <Route path="employees" element={
-          <AdminRoute>
+          <AdminOnlyRoute>
             <Employees />
-          </AdminRoute>
+          </AdminOnlyRoute>
         } />
         
         <Route path="generators" element={
-          <BlockEmployeeRoute>
+          <AdminOnlyRoute>
             <Generators />
-          </BlockEmployeeRoute>
+          </AdminOnlyRoute>
         } />
         
         <Route path="jobs" element={
-          <AdminRoute>
+          <AdminOnlyRoute>
             <JobCards />
-          </AdminRoute>
+          </AdminOnlyRoute>
         } />
         
         <Route path="activity" element={
-          <AdminRoute>
+          <AdminOnlyRoute>
             <ActivityLogs />
-          </AdminRoute>
+          </AdminOnlyRoute>
         } />
         
-        {/* Employee-only route - Only accessible to employees */}
+        {/* Add more admin-only routes here as needed */}
+        {/* 
+        <Route path="reports" element={
+          <AdminOnlyRoute>
+            <Reports />
+          </AdminOnlyRoute>
+        } />
+        
+        <Route path="settings" element={
+          <AdminOnlyRoute>
+            <Settings />
+          </AdminOnlyRoute>
+        } />
+        */}
+        
+        {/* ===== EMPLOYEE-ONLY ROUTES ===== */}
+        {/* These routes are only accessible to employees */}
+        
         <Route path="my-tasks" element={
           <EmployeeOnlyRoute>
             <MyTasks />
           </EmployeeOnlyRoute>
         } />
         
-        {/* Block this route from employees completely */}
-        <Route path="my-activity" element={
-          <BlockEmployeeRoute>
-            <ActivityLogs />
-          </BlockEmployeeRoute>
+        {/* HOW TO ADD NEW EMPLOYEE-ONLY ROUTES: */}
+        {/* Uncomment and customize the route below for new employee pages */}
+        {/* 
+        <Route path="download" element={
+          <EmployeeOnlyRoute>
+            <Download />
+          </EmployeeOnlyRoute>
         } />
         
-        {/* Catch-all redirect - Employees go to my-tasks, Admins go to dashboard */}
+        <Route path="my-profile" element={
+          <EmployeeOnlyRoute>
+            <MyProfile />
+          </EmployeeOnlyRoute>
+        } />
+        
+        <Route path="my-schedule" element={
+          <EmployeeOnlyRoute>
+            <MySchedule />
+          </EmployeeOnlyRoute>
+        } />
+        */}
+        
+        {/* ===== UNIVERSAL ROUTES (Optional) ===== */}
+        {/* These routes can be accessed by both admins and employees */}
+        {/* Uncomment if you need routes accessible to all authenticated users */}
+        {/* 
+        <Route path="help" element={
+          <UniversalRoute>
+            <Help />
+          </UniversalRoute>
+        } />
+        
+        <Route path="notifications" element={
+          <UniversalRoute>
+            <Notifications />
+          </UniversalRoute>
+        } />
+        */}
+        
+        {/* ===== CATCH-ALL ROUTE ===== */}
+        {/* Any unmatched route redirects based on user role */}
         <Route path="*" element={<RoleBasedRedirect />} />
       </Route>
     </Routes>
@@ -141,3 +192,45 @@ function App() {
 }
 
 export default App;
+
+/* 
+===========================================
+HOW TO ADD NEW ROUTES - QUICK REFERENCE:
+===========================================
+
+1. FOR ADMIN-ONLY ROUTES:
+   - Add to the "ADMIN-ONLY ROUTES" section
+   - Wrap with <AdminOnlyRoute>
+   - Example:
+   <Route path="new-admin-page" element={
+     <AdminOnlyRoute>
+       <NewAdminPage />
+     </AdminOnlyRoute>
+   } />
+
+2. FOR EMPLOYEE-ONLY ROUTES:
+   - Add to the "EMPLOYEE-ONLY ROUTES" section  
+   - Wrap with <EmployeeOnlyRoute>
+   - Example:
+   <Route path="download" element={
+     <EmployeeOnlyRoute>
+       <Download />
+     </EmployeeOnlyRoute>
+   } />
+
+3. FOR UNIVERSAL ROUTES (both can access):
+   - Add to the "UNIVERSAL ROUTES" section
+   - Wrap with <UniversalRoute>
+   - Example:
+   <Route path="help" element={
+     <UniversalRoute>
+       <Help />
+     </UniversalRoute>
+   } />
+
+SECURITY GUARANTEE:
+- Employees CANNOT access admin routes (will be redirected to /my-tasks)
+- Admins CANNOT access employee-only routes (will be redirected to /dashboard)
+- All routes require authentication via ProtectedRoute wrapper
+- Unknown routes redirect based on user role
+*/
