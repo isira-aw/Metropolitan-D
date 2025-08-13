@@ -162,7 +162,19 @@ class ApiService {
     return this.handleResponse<JobCardResponse>(response);
   }
 
+async getJobCardsByDate(date: string): Promise<ApiResponse<JobCardResponse[]>> {
+  try {
+    const response = await fetch(`${BASE_URL}/jobcards/by-date?date=${date}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(), // Use your existing auth headers method
+    });
 
+    return this.handleResponse<JobCardResponse[]>(response); // Use your existing response handler
+  } catch (error) {
+    console.error('Error fetching job cards by date:', error);
+    throw error;
+  }
+}
   async deleteJobCard(jobCardId: string) {
     const response = await fetch(`${BASE_URL}/jobcards/${jobCardId}`, {
       method: 'DELETE',
