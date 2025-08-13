@@ -23,11 +23,15 @@ import { Modal } from "../components/UI/Modal";
 
 export const JobCards: React.FC = () => {
   const [jobCards, setJobCards] = useState<JobCardResponse[]>([]);
-  const [filteredJobCards, setFilteredJobCards] = useState<JobCardResponse[]>([]);
+  const [filteredJobCards, setFilteredJobCards] = useState<JobCardResponse[]>(
+    []
+  );
   const [generators, setGenerators] = useState<GeneratorResponse[]>([]);
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR">("ALL");
+  const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR">(
+    "ALL"
+  );
   const [filterDate, setFilterDate] = useState<string>("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -55,8 +59,8 @@ export const JobCards: React.FC = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = () => setShowDropdown(null);
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const loadInitialData = async () => {
@@ -121,7 +125,7 @@ export const JobCards: React.FC = () => {
 
   const handleDateFilterChange = async (date: string) => {
     setFilterDate(date);
-    
+
     if (date) {
       // Load job cards for specific date from backend
       await loadJobCardsByDate(date);
@@ -155,11 +159,11 @@ export const JobCards: React.FC = () => {
 
   const handleDeleteJob = async () => {
     if (!jobToDelete) return;
-    
+
     try {
       setDeleting(true);
       const response = await apiService.deleteJobCard(jobToDelete.jobCardId);
-      
+
       if (response.status) {
         // Refresh based on current filters
         if (filterDate) {
@@ -170,7 +174,9 @@ export const JobCards: React.FC = () => {
         setShowDeleteModal(false);
         setJobToDelete(null);
       } else {
-        alert("Failed to delete job card: " + (response.message || "Unknown error"));
+        alert(
+          "Failed to delete job card: " + (response.message || "Unknown error")
+        );
       }
     } catch (error) {
       console.error("Error deleting job:", error);
@@ -259,7 +265,9 @@ export const JobCards: React.FC = () => {
         <div className="space-y-4">
           {/* Job Type Filter */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Filter by Job Type</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Filter by Job Type
+            </label>
             <div className="flex items-center space-x-2">
               <Filter className="w-4 h-4 text-slate-400" />
               <div className="flex space-x-2">
@@ -335,7 +343,8 @@ export const JobCards: React.FC = () => {
 
             <div className="flex items-end justify-end">
               <div className="text-sm text-slate-500">
-                {filteredJobCards.length} job card{filteredJobCards.length !== 1 ? 's' : ''}
+                {filteredJobCards.length} job card
+                {filteredJobCards.length !== 1 ? "s" : ""}
                 {filterDate && (
                   <span className="block text-xs text-green-600">
                     for {formatDate(filterDate)}
@@ -352,8 +361,8 @@ export const JobCards: React.FC = () => {
               {filterType !== "ALL" && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {filterType}
-                  <button 
-                    onClick={() => setFilterType("ALL")} 
+                  <button
+                    onClick={() => setFilterType("ALL")}
                     className="ml-1 text-blue-600 hover:text-blue-800"
                     title="Remove job type filter"
                   >
@@ -364,8 +373,8 @@ export const JobCards: React.FC = () => {
               {filterDate && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   {formatDate(filterDate)}
-                  <button 
-                    onClick={() => handleDateFilterChange("")} 
+                  <button
+                    onClick={() => handleDateFilterChange("")}
                     className="ml-1 text-green-600 hover:text-green-800"
                     title="Remove date filter"
                   >
@@ -400,7 +409,9 @@ export const JobCards: React.FC = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowDropdown(showDropdown === job.jobCardId ? null : job.jobCardId);
+                      setShowDropdown(
+                        showDropdown === job.jobCardId ? null : job.jobCardId
+                      );
                     }}
                     className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
                     aria-label="More actions"
@@ -409,7 +420,7 @@ export const JobCards: React.FC = () => {
                   </button>
 
                   {showDropdown === job.jobCardId && (
-                    <div 
+                    <div
                       className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -429,7 +440,9 @@ export const JobCards: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <div
                     className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      job.jobType === "SERVICE" ? "bg-green-100" : "bg-orange-100"
+                      job.jobType === "SERVICE"
+                        ? "bg-green-100"
+                        : "bg-orange-100"
                     }`}
                   >
                     {job.jobType === "SERVICE" ? (
@@ -521,13 +534,14 @@ export const JobCards: React.FC = () => {
           <Settings className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">
             {filterDate && filterType !== "ALL"
-              ? `No ${filterType.toLowerCase()} job cards for ${formatDate(filterDate)}`
+              ? `No ${filterType.toLowerCase()} job cards for ${formatDate(
+                  filterDate
+                )}`
               : filterDate
               ? `No job cards for ${formatDate(filterDate)}`
               : filterType !== "ALL"
               ? `No ${filterType.toLowerCase()} job cards found`
-              : "No job cards found"
-            }
+              : "No job cards found"}
           </p>
           {(filterType !== "ALL" || filterDate) && (
             <button
@@ -562,15 +576,29 @@ export const JobCards: React.FC = () => {
               {jobToDelete && (
                 <div className="bg-slate-50 rounded-lg p-4 mb-4">
                   <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Generator:</span> {jobToDelete.generator.name}</p>
-                    <p><span className="font-medium">Type:</span> {jobToDelete.jobType}</p>
-                    <p><span className="font-medium">Date:</span> {formatDate(jobToDelete.date)}</p>
-                    <p><span className="font-medium">Employees:</span> {jobToDelete.assignedEmployees.length} assigned</p>
+                    <p>
+                      <span className="font-medium">Generator:</span>{" "}
+                      {jobToDelete.generator.name}
+                    </p>
+                    <p>
+                      <span className="font-medium">Type:</span>{" "}
+                      {jobToDelete.jobType}
+                    </p>
+                    <p>
+                      <span className="font-medium">Date:</span>{" "}
+                      {formatDate(jobToDelete.date)}
+                    </p>
+                    <p>
+                      <span className="font-medium">Employees:</span>{" "}
+                      {jobToDelete.assignedEmployees.length} assigned
+                    </p>
                   </div>
                 </div>
               )}
               <p className="text-sm text-slate-600">
-                This action cannot be undone. This will permanently delete the job card and all related mini job card tasks assigned to employees.
+                This action cannot be undone. This will permanently delete the
+                job card and all related mini job card tasks assigned to
+                employees.
               </p>
             </div>
           </div>
@@ -746,38 +774,40 @@ export const JobCards: React.FC = () => {
               selected
             </label>
             <div className="max-h-48 overflow-y-auto border border-slate-300 rounded-lg p-3 space-y-2">
-              {employees.map((employee) => (
-                <label
-                  key={employee.email}
-                  className="flex items-center space-x-3 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.employeeEmails.includes(employee.email)}
-                    onChange={() => handleEmployeeToggle(employee.email)}
-                    disabled={
-                      !formData.employeeEmails.includes(employee.email) &&
-                      formData.employeeEmails.length >= 5
-                    }
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900">
-                      {employee.name}
-                    </p>
-                    <p className="text-xs text-slate-500">{employee.email}</p>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      employee.role === "ADMIN"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
+              {employees
+                .filter((employee) => employee.role !== "ADMIN")
+                .map((employee) => (
+                  <label
+                    key={employee.email}
+                    className="flex items-center space-x-3 cursor-pointer"
                   >
-                    {employee.role}
-                  </span>
-                </label>
-              ))}
+                    <input
+                      type="checkbox"
+                      checked={formData.employeeEmails.includes(employee.email)}
+                      onChange={() => handleEmployeeToggle(employee.email)}
+                      disabled={
+                        !formData.employeeEmails.includes(employee.email) &&
+                        formData.employeeEmails.length >= 5
+                      }
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">
+                        {employee.name}
+                      </p>
+                      <p className="text-xs text-slate-500">{employee.email}</p>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        employee.role === "ADMIN"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {employee.role}
+                    </span>
+                  </label>
+                ))}
             </div>
           </div>
 

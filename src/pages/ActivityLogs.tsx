@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Copy, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { apiService } from '../services/api';
-import { LogResponse, EmployeeResponse } from '../types/api';
-import { LoadingSpinner } from '../components/UI/LoadingSpinner';
+import React, { useState, useEffect } from "react";
+import {
+  Clock,
+  MapPin,
+  Copy,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { apiService } from "../services/api";
+import { LogResponse, EmployeeResponse } from "../types/api";
+import { LoadingSpinner } from "../components/UI/LoadingSpinner";
 
 // Simple Map Component for location display
-const SimpleMap: React.FC<{ 
-  latitude: number; 
-  longitude: number; 
+const SimpleMap: React.FC<{
+  latitude: number;
+  longitude: number;
   address: string;
   employeeName: string;
   action: string;
@@ -17,7 +24,7 @@ const SimpleMap: React.FC<{
 
   const openInGoogleMaps = () => {
     const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   };
 
   const copyCoordinates = async () => {
@@ -26,7 +33,7 @@ const SimpleMap: React.FC<{
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-      console.error('Failed to copy coordinates:', err);
+      console.error("Failed to copy coordinates:", err);
     }
   };
 
@@ -37,7 +44,7 @@ const SimpleMap: React.FC<{
           <MapPin className="w-5 h-5 text-blue-400" />
           <span>Location Details - {action}</span>
         </h4>
-        
+
         <div className="space-y-3">
           <div className="bg-slate-700/50 rounded-lg p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -47,7 +54,9 @@ const SimpleMap: React.FC<{
               </div>
               <div>
                 <span className="text-slate-400">Action:</span>
-                <p className="text-white font-medium">{action.replace(/_/g, ' ')}</p>
+                <p className="text-white font-medium">
+                  {action.replace(/_/g, " ")}
+                </p>
               </div>
               <div className="md:col-span-2">
                 <span className="text-slate-400">Address:</span>
@@ -55,11 +64,13 @@ const SimpleMap: React.FC<{
               </div>
               <div className="md:col-span-2">
                 <span className="text-slate-400">Coordinates:</span>
-                <p className="text-white font-medium">{latitude.toFixed(6)}, {longitude.toFixed(6)}</p>
+                <p className="text-white font-medium">
+                  {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                </p>
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={openInGoogleMaps}
@@ -68,17 +79,17 @@ const SimpleMap: React.FC<{
               <ExternalLink className="w-4 h-4" />
               <span>Open in Google Maps</span>
             </button>
-            
+
             <button
               onClick={copyCoordinates}
               className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm ${
-                copySuccess 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-slate-600 hover:bg-slate-700 text-white'
+                copySuccess
+                  ? "bg-green-600 text-white"
+                  : "bg-slate-600 hover:bg-slate-700 text-white"
               }`}
             >
               <Copy className="w-4 h-4" />
-              <span>{copySuccess ? 'Copied!' : 'Copy Coordinates'}</span>
+              <span>{copySuccess ? "Copied!" : "Copy Coordinates"}</span>
             </button>
           </div>
         </div>
@@ -90,11 +101,13 @@ const SimpleMap: React.FC<{
 // Enhanced Activity Log Item Component
 const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
   const [showLocation, setShowLocation] = useState(false);
-  const [locationAddress, setLocationAddress] = useState<string>('');
+  const [locationAddress, setLocationAddress] = useState<string>("");
   const [loadingAddress, setLoadingAddress] = useState(false);
 
-  const hasLocation = log.location && log.location.includes(',');
-  const coordinates = hasLocation ? log.location.split(',').map(coord => parseFloat(coord.trim())) : null;
+  const hasLocation = log.location && log.location.includes(",");
+  const coordinates = hasLocation
+    ? log.location.split(",").map((coord) => parseFloat(coord.trim()))
+    : null;
 
   useEffect(() => {
     if (hasLocation && coordinates && showLocation && !locationAddress) {
@@ -104,23 +117,23 @@ const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
 
   const fetchLocationAddress = async () => {
     if (!coordinates) return;
-    
+
     setLoadingAddress(true);
     try {
       const [lat, lon] = coordinates;
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
       );
-      
+
       if (response.ok) {
         const data = await response.json();
-        setLocationAddress(data.display_name || 'Address not found');
+        setLocationAddress(data.display_name || "Address not found");
       } else {
-        setLocationAddress('Unable to fetch address');
+        setLocationAddress("Unable to fetch address");
       }
     } catch (error) {
-      console.error('Error fetching address:', error);
-      setLocationAddress('Error fetching address');
+      console.error("Error fetching address:", error);
+      setLocationAddress("Error fetching address");
     } finally {
       setLoadingAddress(false);
     }
@@ -128,44 +141,48 @@ const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
 
   const formatDateTime = (date: string, time: string) => {
     const dateTime = new Date(`${date}T${time}`);
-    return dateTime.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return dateTime.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getActionIcon = (action: string) => {
-    if (action.includes('UPDATE')) return '✏️';
-    if (action.includes('CREATE')) return '➕';
-    if (action.includes('DELETE')) return '🗑️';
-    if (action.includes('LOGIN')) return '🔐';
-    return '📝';
+    if (action.includes("UPDATE")) return "✏️";
+    if (action.includes("CREATE")) return "➕";
+    if (action.includes("DELETE")) return "🗑️";
+    if (action.includes("LOGIN")) return "🔐";
+    return "📝";
   };
 
   const getActionColor = (action: string) => {
-    if (action.includes('UPDATE')) return 'bg-blue-100 text-blue-600';
-    if (action.includes('CREATE')) return 'bg-green-100 text-green-600';
-    if (action.includes('DELETE')) return 'bg-red-100 text-red-600';
-    if (action.includes('LOGIN')) return 'bg-purple-100 text-purple-600';
-    return 'bg-slate-100 text-slate-600';
+    if (action.includes("UPDATE")) return "bg-blue-100 text-blue-600";
+    if (action.includes("CREATE")) return "bg-green-100 text-green-600";
+    if (action.includes("DELETE")) return "bg-red-100 text-red-600";
+    if (action.includes("LOGIN")) return "bg-purple-100 text-purple-600";
+    return "bg-slate-100 text-slate-600";
   };
 
   const getStatusColor = (status: string) => {
-    if (status === 'SUCCESS') return 'bg-green-100 text-green-700';
-    if (status === 'FAILED') return 'bg-red-100 text-red-700';
-    return 'bg-yellow-100 text-yellow-700';
+    if (status === "SUCCESS") return "bg-green-100 text-green-700";
+    if (status === "FAILED") return "bg-red-100 text-red-700";
+    return "bg-yellow-100 text-yellow-700";
   };
 
   return (
     <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:shadow-md transition-shadow">
       <div className="flex items-center space-x-3">
         {/* Icon */}
-        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm ${getActionColor(log.action)}`}>
+        <div
+          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm ${getActionColor(
+            log.action
+          )}`}
+        >
           {getActionIcon(log.action)}
         </div>
-        
+
         {/* Main Content - All in one row */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
@@ -174,15 +191,19 @@ const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
               <span className="text-sm font-semibold text-slate-900 truncate">
                 {log.employeeName}
               </span>
-              
+
               {/* Action */}
               <span className="text-sm text-slate-600 truncate">
-                {log.action.replace(/_/g, ' ')}
+                {log.action.replace(/_/g, " ")}
               </span>
-              
+
               {/* Status Badge */}
               {log.status && (
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(log.status)}`}>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                    log.status
+                  )}`}
+                >
                   {log.status}
                 </span>
               )}
@@ -194,11 +215,15 @@ const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
                 >
                   <MapPin className="w-5 h-5" />
                   <span>Location</span>
-                  {showLocation ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  {showLocation ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
                 </button>
               )}
             </div>
-            
+
             {/* Time */}
             <span className="text-xs text-slate-500 flex-shrink-0">
               {formatDateTime(log.date, log.time)}
@@ -206,7 +231,7 @@ const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Expandable Location Section */}
       {showLocation && hasLocation && coordinates && (
         <div className="mt-3 ml-11">
@@ -219,7 +244,7 @@ const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
             <SimpleMap
               latitude={coordinates[0]}
               longitude={coordinates[1]}
-              address={locationAddress || 'Address not available'}
+              address={locationAddress || "Address not available"}
               employeeName={log.employeeName}
               action={log.action}
             />
@@ -236,8 +261,8 @@ export const ActivityLogs: React.FC = () => {
   const [filteredLogs, setFilteredLogs] = useState<LogResponse[]>([]);
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [hoursFilter, setHoursFilter] = useState<number>(24);
 
   useEffect(() => {
@@ -251,11 +276,11 @@ export const ActivityLogs: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       if (isAdmin) {
         const [logsRes, employeesRes] = await Promise.all([
           apiService.getAllLogs(),
-          apiService.getAllEmployees()
+          apiService.getAllEmployees(),
         ]);
 
         if (logsRes.status && logsRes.data) {
@@ -272,7 +297,7 @@ export const ActivityLogs: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading activity logs:', error);
+      console.error("Error loading activity logs:", error);
     } finally {
       setLoading(false);
     }
@@ -283,7 +308,10 @@ export const ActivityLogs: React.FC = () => {
       let filteredData = logs;
 
       if (selectedEmployee && selectedDate) {
-        const response = await apiService.getLogsByEmployeeAndDate(selectedEmployee, selectedDate);
+        const response = await apiService.getLogsByEmployeeAndDate(
+          selectedEmployee,
+          selectedDate
+        );
         if (response.status && response.data) {
           filteredData = response.data;
         }
@@ -306,18 +334,20 @@ export const ActivityLogs: React.FC = () => {
 
       setFilteredLogs(filteredData);
     } catch (error) {
-      console.error('Error applying filters:', error);
+      console.error("Error applying filters:", error);
       setFilteredLogs(logs);
     }
   };
 
   const clearFilters = () => {
-    setSelectedEmployee('');
-    setSelectedDate('');
+    setSelectedEmployee("");
+    setSelectedDate("");
     setHoursFilter(24);
   };
 
-  const locationLogsCount = filteredLogs.filter(log => log.location && log.location.includes(',')).length;
+  const locationLogsCount = filteredLogs.filter(
+    (log) => log.location && log.location.includes(",")
+  ).length;
 
   if (loading) {
     return (
@@ -331,7 +361,7 @@ export const ActivityLogs: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">
-          {isAdmin ? 'Activity Logs' : 'My Activity'}
+          {isAdmin ? "Activity Logs" : "My Activity"}
         </h1>
         <div className="flex items-center space-x-4 mt-2">
           {/* <p className="text-slate-600">
@@ -351,24 +381,30 @@ export const ActivityLogs: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {isAdmin && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Employee</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Employee
+              </label>
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Employees</option>
-                {employees.map((employee) => (
-                  <option key={employee.email} value={employee.email}>
-                    {employee.name}
-                  </option>
-                ))}
+                {employees
+                  .filter((employee) => employee.role !== "ADMIN")
+                  .map((employee) => (
+                    <option key={employee.email} value={employee.email}>
+                      {employee.name}
+                    </option>
+                  ))}
               </select>
             </div>
           )}
-          
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Date
+            </label>
             <input
               type="date"
               value={selectedDate}
@@ -378,7 +414,9 @@ export const ActivityLogs: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Time Range</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Time Range
+            </label>
             <select
               value={hoursFilter}
               onChange={(e) => setHoursFilter(Number(e.target.value))}
@@ -417,7 +455,7 @@ export const ActivityLogs: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         <div className="p-6">
           {filteredLogs.length > 0 ? (
             <div className="space-y-4">
