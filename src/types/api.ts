@@ -138,3 +138,22 @@ export interface HealthResponse {
   service: string;
   version: string;
 }
+
+// Report request interface
+export interface ReportRequest {
+  email: string;
+  startDate: string; // Format: YYYY-MM-DD
+  endDate: string;   // Format: YYYY-MM-DD
+}
+
+// Daily report data interface
+export interface ReportDataResponse {
+  date: string;
+  generatorNames: string;
+  firstActionLocation: string;
+  lastActionLocation: string;
+  fullWorkingTime: number;
+  morningOTTime: number;
+  eveningOTTime: number;
+  totalOTTime: number;
+}
