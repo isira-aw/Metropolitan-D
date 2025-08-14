@@ -13,11 +13,13 @@ import {
   UpdateMiniJobCardRequest,
   CreateMiniJobCardRequest,
   LogResponse,
-  HealthResponse
+  HealthResponse,
+  ReportRequest,
+  ReportDataResponse
 } from '../types/api';
 
-// const BASE_URL = 'http://localhost:8080/api';
-const BASE_URL = 'https://metropolitan-b-production.up.railway.app/api';
+const BASE_URL = 'http://localhost:8080/api';
+// const BASE_URL = 'https://metropolitan-b-production.up.railway.app/api';
 
 class ApiService {
   private getAuthHeaders(): HeadersInit {
@@ -162,19 +164,19 @@ class ApiService {
     return this.handleResponse<JobCardResponse>(response);
   }
 
-async getJobCardsByDate(date: string): Promise<ApiResponse<JobCardResponse[]>> {
-  try {
-    const response = await fetch(`${BASE_URL}/jobcards/by-date?date=${date}`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(), // Use your existing auth headers method
-    });
+  async getJobCardsByDate(date: string): Promise<ApiResponse<JobCardResponse[]>> {
+    try {
+      const response = await fetch(`${BASE_URL}/jobcards/by-date?date=${date}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
 
-    return this.handleResponse<JobCardResponse[]>(response); // Use your existing response handler
-  } catch (error) {
-    console.error('Error fetching job cards by date:', error);
-    throw error;
+      return this.handleResponse<JobCardResponse[]>(response);
+    } catch (error) {
+      console.error('Error fetching job cards by date:', error);
+      throw error;
+    }
   }
-}
   async deleteJobCard(jobCardId: string) {
     const response = await fetch(`${BASE_URL}/jobcards/${jobCardId}`, {
       method: 'DELETE',
@@ -320,6 +322,29 @@ async getJobCardsByDate(date: string): Promise<ApiResponse<JobCardResponse[]>> {
     const response = await fetch(`${BASE_URL}/health`);
     return this.handleResponse<HealthResponse>(response);
   }
+
+  // ============================================================================
+  // REPORTS SECTION
+  // ============================================================================
+
+ 
+  
+  async previewReportData(request: ReportRequest): Promise<ApiResponse<ReportDataResponse[]>> {
+    const response = await fetch(`${BASE_URL}/reports/employee/preview`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(request)
+    });
+    return this.handleResponse<ReportDataResponse[]>(response);
+  }
+
+  async getEmployeesForReports(): Promise<ApiResponse<EmployeeResponse[]>> {
+    const response = await fetch(`${BASE_URL}/reports/employees`, {
+      headers: this.getAuthHeaders()
+    });
+    return this.handleResponse<EmployeeResponse[]>(response);
+  }
+
 }
 
 export const apiService = new ApiService();
