@@ -1,21 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import {  Search, Edit, Trash2, Phone } from 'lucide-react';
-import { apiService } from '../services/api';
-import { EmployeeResponse, UpdateEmployeeRequest } from '../types/api';
-import { LoadingSpinner } from '../components/UI/LoadingSpinner';
-import { Modal } from '../components/UI/Modal';
+import React, { useState, useEffect } from "react";
+import { Search, Edit, Trash2, Phone, Plus } from "lucide-react";
+import { apiService } from "../services/api";
+import { EmployeeResponse, UpdateEmployeeRequest } from "../types/api";
+import { LoadingSpinner } from "../components/UI/LoadingSpinner";
+import { Modal } from "../components/UI/Modal";
+import { Link } from "react-router-dom";
 
 export const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<EmployeeResponse[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<
+    EmployeeResponse[]
+  >([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<EmployeeResponse | null>(null);
+  const [editingEmployee, setEditingEmployee] =
+    useState<EmployeeResponse | null>(null);
   const [editForm, setEditForm] = useState<UpdateEmployeeRequest>({
-    name: '',
-    contactNumber: '',
-    role: 'EMPLOYEE'
+    name: "",
+    contactNumber: "",
+    role: "EMPLOYEE",
   });
 
   useEffect(() => {
@@ -23,10 +27,11 @@ export const Employees: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = employees.filter(employee =>
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.role.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = employees.filter(
+      (employee) =>
+        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.role.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredEmployees(filtered);
   }, [employees, searchTerm]);
@@ -39,7 +44,7 @@ export const Employees: React.FC = () => {
         setEmployees(response.data);
       }
     } catch (error) {
-      console.error('Error loading employees:', error);
+      console.error("Error loading employees:", error);
     } finally {
       setLoading(false);
     }
@@ -50,7 +55,7 @@ export const Employees: React.FC = () => {
     setEditForm({
       name: employee.name,
       contactNumber: employee.contactNumber,
-      role: employee.role
+      role: employee.role,
     });
     setShowEditModal(true);
   };
@@ -59,19 +64,22 @@ export const Employees: React.FC = () => {
     if (!editingEmployee) return;
 
     try {
-      const response = await apiService.updateEmployee(editingEmployee.email, editForm);
+      const response = await apiService.updateEmployee(
+        editingEmployee.email,
+        editForm
+      );
       if (response.status) {
         await loadEmployees();
         setShowEditModal(false);
         setEditingEmployee(null);
       }
     } catch (error) {
-      console.error('Error updating employee:', error);
+      console.error("Error updating employee:", error);
     }
   };
 
   const handleDelete = async (email: string) => {
-    if (!confirm('Are you sure you want to delete this employee?')) return;
+    if (!confirm("Are you sure you want to delete this employee?")) return;
 
     try {
       const response = await apiService.deleteEmployee(email);
@@ -79,15 +87,15 @@ export const Employees: React.FC = () => {
         await loadEmployees();
       }
     } catch (error) {
-      console.error('Error deleting employee:', error);
+      console.error("Error deleting employee:", error);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -106,10 +114,12 @@ export const Employees: React.FC = () => {
           <h1 className="text-3xl font-bold text-slate-900">Employees</h1>
           {/* <p className="text-slate-600 mt-2">Manage your team members</p> */}
         </div>
-        {/* <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-          <Plus className="w-4 h-4" />
-          <span>Add Employee</span>
-        </button> */}
+        <Link to="/register8f3b56f79e4a4f21a4c75b8f273617f8">
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+            <Plus className="w-4 h-4" />
+            <span>Add Employee</span>
+          </button>
+        </Link>
       </div>
 
       {/* Search */}
@@ -132,11 +142,21 @@ export const Employees: React.FC = () => {
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="text-left py-4 px-6 font-semibold text-slate-900">Employee</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-900">Contact</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-900">Role</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-900">Join Date</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-900">Actions</th>
+                <th className="text-left py-4 px-6 font-semibold text-slate-900">
+                  Employee
+                </th>
+                <th className="text-left py-4 px-6 font-semibold text-slate-900">
+                  Contact
+                </th>
+                <th className="text-left py-4 px-6 font-semibold text-slate-900">
+                  Role
+                </th>
+                <th className="text-left py-4 px-6 font-semibold text-slate-900">
+                  Join Date
+                </th>
+                <th className="text-left py-4 px-6 font-semibold text-slate-900">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -146,12 +166,20 @@ export const Employees: React.FC = () => {
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                         <span className="text-blue-600 font-semibold text-sm">
-                          {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          {employee.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-slate-900">{employee.name}</p>
-                        <p className="text-sm text-slate-500">{employee.email}</p>
+                        <p className="font-medium text-slate-900">
+                          {employee.name}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {employee.email}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -162,11 +190,13 @@ export const Employees: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-4 px-6">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      employee.role === 'ADMIN' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        employee.role === "ADMIN"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
                       {employee.role}
                     </span>
                   </td>
@@ -211,28 +241,46 @@ export const Employees: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Name</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Name
+            </label>
             <input
               type="text"
               value={editForm.name}
-              onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, name: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Contact Number</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Contact Number
+            </label>
             <input
               type="tel"
               value={editForm.contactNumber}
-              onChange={(e) => setEditForm(prev => ({ ...prev, contactNumber: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  contactNumber: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Role</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Role
+            </label>
             <select
               value={editForm.role}
-              onChange={(e) => setEditForm(prev => ({ ...prev, role: e.target.value as 'ADMIN' | 'EMPLOYEE' }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  role: e.target.value as "ADMIN" | "EMPLOYEE",
+                }))
+              }
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="EMPLOYEE">Employee</option>

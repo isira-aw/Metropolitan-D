@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
@@ -63,6 +63,7 @@ export const Login: React.FC = () => {
           response.message || "Invalid email or password. Please try again."
         );
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login error:", error);
 
@@ -243,7 +244,7 @@ export const Login: React.FC = () => {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          {/* <div className="mt-6 text-center">
             <p className="text-slate-600">
               Don't have an account?{" "}
               <Link
@@ -251,10 +252,10 @@ export const Login: React.FC = () => {
                 className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
                 tabIndex={loading ? -1 : 0}
               >
-                Register here
+                Add Employee
               </Link>
             </p>
-          </div>
+          </div> */}
 
           {/* Additional Help */}
           <div className="mt-4 text-center">
