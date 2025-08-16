@@ -65,7 +65,7 @@ function AppRoutes() {
     <Routes>
       {/* Public routes - No authentication required */}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/register8f3b56f79e4a4f21a4c75b8f273617f8" element={<Register />} />
       
       {/* Root redirect based on role */}
       <Route path="/" element={<RoleBasedRedirect />} />
