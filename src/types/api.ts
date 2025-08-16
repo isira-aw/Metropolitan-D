@@ -3,6 +3,7 @@ export interface ApiResponse<T> {
   status: boolean;
   message: string;
   data: T;
+  error?: string;
 }
 
 // Authentication Types
@@ -25,6 +26,23 @@ export interface AuthResponse {
   name: string;
   role: 'ADMIN' | 'EMPLOYEE';
   contactNumber: string;
+}
+
+// Forgot Password Types
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface VerifyTokenResponse {
+  valid: boolean;
+  email?: string;
+  message: string;
 }
 
 // Employee Types
@@ -103,7 +121,7 @@ export interface MiniJobCardResponse {
 }
 
 export interface UpdateMiniJobCardRequest {
-  estimatedTime: unknown;
+  estimatedTime?: string;
   status?: TaskStatus;
   location?: string;
   time?: string;
@@ -156,4 +174,57 @@ export interface ReportDataResponse {
   morningOTTime: number;
   eveningOTTime: number;
   totalOTTime: number;
+}
+
+// Form validation types
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface FormState<T> {
+  data: T;
+  errors: ValidationError[];
+  isSubmitting: boolean;
+  isValid: boolean;
+}
+
+// Pagination types
+export interface PaginationParams {
+  page: number;
+  size: number;
+  sortBy?: string;
+  sortDirection?: 'ASC' | 'DESC';
+}
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  size: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+// Filter types
+export interface EmployeeFilter {
+  role?: 'ADMIN' | 'EMPLOYEE';
+  search?: string;
+}
+
+export interface JobCardFilter {
+  jobType?: 'SERVICE' | 'REPAIR';
+  dateFrom?: string;
+  dateTo?: string;
+  generatorId?: string;
+  employeeEmail?: string;
+}
+
+export interface LogFilter {
+  employeeEmail?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  action?: string;
+  status?: string;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
@@ -113,6 +113,10 @@ export const Login: React.FC = () => {
     setTimeout(() => setError(""), 300);
   };
 
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
+  };
+
   return (
     <div className="min-h-screen bg-[#0F172A] to-slate-900 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -224,6 +228,18 @@ export const Login: React.FC = () => {
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Forgot Password Link */}
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                Forgot your password?
+              </button>
             </div>
 
             <button

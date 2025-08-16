@@ -15,7 +15,9 @@ import {
   LogResponse,
   HealthResponse,
   ReportRequest,
-  ReportDataResponse
+  ReportDataResponse,
+  ResetPasswordRequest,
+  ForgotPasswordRequest
 } from '../types/api';
 
 // const BASE_URL = 'http://localhost:8080/api';
@@ -344,6 +346,35 @@ class ApiService {
     });
     return this.handleResponse<EmployeeResponse[]>(response);
   }
+
+
+  // Forgot Password Methods
+  async forgotPassword(data: ForgotPasswordRequest): Promise<ApiResponse<string>> {
+    const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<string>(response);
+  }
+
+  async resetPassword(data: ResetPasswordRequest): Promise<ApiResponse<string>> {
+    const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<string>(response);
+  }
+
+  async verifyResetToken(token: string): Promise<ApiResponse<string>> {
+    const response = await fetch(`${BASE_URL}/auth/verify-reset-token/${encodeURIComponent(token)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return this.handleResponse<string>(response);
+  }
+
 
 }
 

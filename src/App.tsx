@@ -11,6 +11,8 @@ import { Generators } from './pages/Generators';
 import { JobCards } from './pages/JobCards';
 import { MyTasks } from './pages/MyTasks';
 import { ActivityLogs } from './pages/ActivityLogs';
+import { ForgotPasswordComponent } from './components/frogetpassword';
+import { ResetPasswordComponent } from './components/Resetpasswordcom';
 
 // Role-based redirect component
 const RoleBasedRedirect: React.FC = () => {
@@ -67,6 +69,10 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register8f3b56f79e4a4f21a4c75b8f273617f8" element={<Register />} />
       
+             {/* New password reset routes */}
+        <Route path="/forgot-password" element={<ForgotPasswordComponent />} />
+        <Route path="/reset-password" element={<ResetPasswordComponent />} />
+        
       {/* Root redirect based on role */}
       <Route path="/" element={<RoleBasedRedirect />} />
       
