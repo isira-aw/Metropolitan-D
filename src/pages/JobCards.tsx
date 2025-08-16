@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Filter,
@@ -10,6 +10,9 @@ import {
   Trash2,
   AlertTriangle,
   MoreVertical,
+  Search,
+  ChevronDown,
+  X,
 } from "lucide-react";
 import { apiService } from "../services/api";
 import {
@@ -20,6 +23,185 @@ import {
 } from "../types/api";
 import { LoadingSpinner } from "../components/UI/LoadingSpinner";
 import { Modal } from "../components/UI/Modal";
+
+// Searchable Generator Select Component
+interface SearchableGeneratorSelectProps {
+  generators: GeneratorResponse[];
+  value: string;
+  onChange: (generatorId: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
+  generators,
+  value,
+  onChange,
+  placeholder = "Select a generator",
+  className = ""
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredGenerators, setFilteredGenerators] = useState<GeneratorResponse[]>(generators);
+  const [selectedGenerator, setSelectedGenerator] = useState<GeneratorResponse | null>(null);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Filter generators based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredGenerators(generators);
+    } else {
+      const filtered = generators.filter(generator =>
+        generator.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredGenerators(filtered);
+    }
+  }, [searchTerm, generators]);
+
+  // Find selected generator when value changes
+  useEffect(() => {
+    const selected = generators.find(gen => gen.generatorId === value);
+    setSelectedGenerator(selected || null);
+  }, [value, generators]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const handleSelect = (generator: GeneratorResponse) => {
+    onChange(generator.generatorId);
+    setSelectedGenerator(generator);
+    setIsOpen(false);
+    setSearchTerm('');
+  };
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange('');
+    setSelectedGenerator(null);
+    setSearchTerm('');
+  };
+
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen) {
+      setSearchTerm('');
+    }
+  };
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      {/* Main Select Button */}
+      <button
+        type="button"
+        onClick={toggleDropdown}
+        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between hover:border-slate-400 transition-colors"
+      >
+        <span className={selectedGenerator ? "text-slate-900" : "text-slate-500"}>
+          {selectedGenerator 
+            ? `${selectedGenerator.name} - ${selectedGenerator.capacity}` 
+            : placeholder
+          }
+        </span>
+        <div className="flex items-center space-x-2">
+          {selectedGenerator && (
+            <button
+              onClick={handleClear}
+              className="text-slate-400 hover:text-slate-600 p-1"
+              type="button"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          {/* Search Input */}
+          <div className="p-3 border-b border-slate-200">
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search generators by name..."
+                className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Options List */}
+          <div className="max-h-48 overflow-y-auto">
+            {filteredGenerators.length > 0 ? (
+              <>
+                {/* Clear selection option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange('');
+                    setSelectedGenerator(null);
+                    setIsOpen(false);
+                    setSearchTerm('');
+                  }}
+                  className="w-full px-3 py-2 text-left hover:bg-slate-50 text-slate-500 border-b border-slate-100"
+                >
+                  Clear selection
+                </button>
+                {filteredGenerators.map((generator) => (
+                  <button
+                    key={generator.generatorId}
+                    type="button"
+                    onClick={() => handleSelect(generator)}
+                    className={`w-full px-3 py-3 text-left hover:bg-blue-50 border-b border-slate-100 last:border-b-0 transition-colors ${
+                      selectedGenerator?.generatorId === generator.generatorId 
+                        ? 'bg-blue-50 text-blue-700' 
+                        : 'text-slate-900'
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{generator.name}</span>
+                      {/* <span className="text-sm text-slate-500">Capacity: {generator.capacity}</span>
+                      {generator.contactNumber && (
+                        <span className="text-xs text-slate-400">Contact: {generator.contactNumber}</span>
+                      )} */}
+                    </div>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <div className="px-3 py-4 text-slate-500 text-center">
+                No generators found matching "{searchTerm}"
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const JobCards: React.FC = () => {
   const [jobCards, setJobCards] = useState<JobCardResponse[]>([]);
@@ -677,31 +859,23 @@ export const JobCards: React.FC = () => {
             </div>
           </div>
 
-          {/* Generator Selection */}
+          {/* Generator Selection with Search */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Generator
             </label>
-            <select
+            <SearchableGeneratorSelect
+              generators={generators}
               value={formData.generatorId}
-              onChange={(e) =>
+              onChange={(generatorId) =>
                 setFormData((prev) => ({
                   ...prev,
-                  generatorId: e.target.value,
+                  generatorId,
                 }))
               }
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select a generator</option>
-              {generators.map((generator) => (
-                <option
-                  key={generator.generatorId}
-                  value={generator.generatorId}
-                >
-                  {generator.name} - {generator.capacity}
-                </option>
-              ))}
-            </select>
+              placeholder="Select a generator"
+              className="w-full"
+            />
           </div>
 
           {/* Date and Time */}
