@@ -183,10 +183,6 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
                   >
                     <div className="flex flex-col">
                       <span className="font-medium">{generator.name}</span>
-                      {/* <span className="text-sm text-slate-500">Capacity: {generator.capacity}</span>
-                      {generator.contactNumber && (
-                        <span className="text-xs text-slate-400">Contact: {generator.contactNumber}</span>
-                      )} */}
                     </div>
                   </button>
                 ))}
@@ -205,15 +201,11 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
 
 export const JobCards: React.FC = () => {
   const [jobCards, setJobCards] = useState<JobCardResponse[]>([]);
-  const [filteredJobCards, setFilteredJobCards] = useState<JobCardResponse[]>(
-    []
-  );
+  const [filteredJobCards, setFilteredJobCards] = useState<JobCardResponse[]>([]);
   const [generators, setGenerators] = useState<GeneratorResponse[]>([]);
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR">(
-    "ALL"
-  );
+  const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR">("ALL");
   const [filterDate, setFilterDate] = useState<string>("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -228,6 +220,10 @@ export const JobCards: React.FC = () => {
   });
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const [dateFilterLoading, setDateFilterLoading] = useState(false);
+  
+  // New state for employee search
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
+  const [filteredEmployees, setFilteredEmployees] = useState<EmployeeResponse[]>([]);
 
   useEffect(() => {
     loadInitialData();
@@ -237,6 +233,21 @@ export const JobCards: React.FC = () => {
     // Apply job type filtering on the current job cards
     filterByJobType();
   }, [jobCards, filterType]);
+
+  // Filter employees based on search term
+  useEffect(() => {
+    const nonAdminEmployees = employees.filter((employee) => employee.role !== "ADMIN");
+    
+    if (employeeSearchTerm.trim() === '') {
+      setFilteredEmployees(nonAdminEmployees);
+    } else {
+      const filtered = nonAdminEmployees.filter(employee =>
+        employee.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
+        employee.email.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+      );
+      setFilteredEmployees(filtered);
+    }
+  }, [employeeSearchTerm, employees]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -375,6 +386,7 @@ export const JobCards: React.FC = () => {
       estimatedTime: "",
       employeeEmails: [],
     });
+    setEmployeeSearchTerm('');
   };
 
   const handleEmployeeToggle = (email: string) => {
@@ -636,13 +648,7 @@ export const JobCards: React.FC = () => {
                         }`}
                       />
                     ) : (
-                      <Wrench
-                        className={`w-6 h-6 ${
-                          job.jobType === "SERVICE"
-                            ? "text-green-600"
-                            : "text-orange-600"
-                        }`}
-                      />
+                      <Wrench className="w-6 h-6 text-orange-600 " />
                     )}
                   </div>
                   <div>
@@ -941,47 +947,149 @@ export const JobCards: React.FC = () => {
             </div>
           </div>
 
-          {/* Employee Selection */}
+          {/* Employee Selection with Search */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Assign Employees (max 5) - {formData.employeeEmails.length}{" "}
-              selected
+              Assign Employees (max 5) - {formData.employeeEmails.length} selected
             </label>
-            <div className="max-h-48 overflow-y-auto border border-slate-300 rounded-lg p-3 space-y-2">
-              {employees
-                .filter((employee) => employee.role !== "ADMIN")
-                .map((employee) => (
-                  <label
-                    key={employee.email}
-                    className="flex items-center space-x-3 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.employeeEmails.includes(employee.email)}
-                      onChange={() => handleEmployeeToggle(employee.email)}
-                      disabled={
-                        !formData.employeeEmails.includes(employee.email) &&
-                        formData.employeeEmails.length >= 5
-                      }
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900">
+            
+            {/* Search Input */}
+            <div className="relative mb-3">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <input
+                type="text"
+                value={employeeSearchTerm}
+                onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                placeholder="Search employees by name or email..."
+                className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+              {employeeSearchTerm && (
+                <button
+                  onClick={() => setEmployeeSearchTerm('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                  title="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Selected Employees Summary */}
+            {formData.employeeEmails.length > 0 && (
+              <div className="mb-3 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm font-medium text-blue-900 mb-2">Selected Employees:</p>
+                <div className="flex flex-wrap gap-2">
+                  {formData.employeeEmails.map((email) => {
+                    const employee = employees.find(emp => emp.email === email);
+                    return employee ? (
+                      <span
+                        key={email}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
                         {employee.name}
-                      </p>
-                      <p className="text-xs text-slate-500">{employee.email}</p>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        employee.role === "ADMIN"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-blue-100 text-blue-800"
+                        <button
+                          onClick={() => handleEmployeeToggle(email)}
+                          className="ml-1.5 text-blue-600 hover:text-blue-800"
+                          title="Remove employee"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Employee List */}
+            <div className="max-h-64 overflow-y-auto border border-slate-300 rounded-lg">
+              {filteredEmployees.length > 0 ? (
+                <div className="p-3 space-y-2">
+                  {filteredEmployees.map((employee) => (
+                    <label
+                      key={employee.email}
+                      className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                        formData.employeeEmails.includes(employee.email)
+                          ? 'bg-blue-50 border border-blue-200'
+                          : 'hover:bg-slate-50 border border-transparent'
                       }`}
                     >
-                      {employee.role}
-                    </span>
-                  </label>
-                ))}
+                      <input
+                        type="checkbox"
+                        checked={formData.employeeEmails.includes(employee.email)}
+                        onChange={() => handleEmployeeToggle(employee.email)}
+                        disabled={
+                          !formData.employeeEmails.includes(employee.email) &&
+                          formData.employeeEmails.length >= 5
+                        }
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-900">
+                          {employee.name}
+                        </p>
+                        <p className="text-xs text-slate-500">{employee.email}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            employee.role === "ADMIN"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {employee.role}
+                        </span>
+                        {formData.employeeEmails.includes(employee.email) && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full" title="Selected"></div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 text-center text-slate-500">
+                  {employeeSearchTerm ? (
+                    <div>
+                      <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p>No employees found matching "{employeeSearchTerm}"</p>
+                      <button
+                        onClick={() => setEmployeeSearchTerm('')}
+                        className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        Clear search
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p>No employees available</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mt-3 flex justify-between items-center text-sm">
+              <div className="flex space-x-2">
+                {formData.employeeEmails.length > 0 && (
+                  <button
+                    onClick={() => setFormData(prev => ({ ...prev, employeeEmails: [] }))}
+                    className="text-red-600 hover:text-red-700 font-medium"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+              <div className="text-slate-500">
+                {filteredEmployees.length} employee{filteredEmployees.length !== 1 ? 's' : ''} available
+                {formData.employeeEmails.length >= 5 && (
+                  <span className="block text-orange-600 text-xs mt-1">
+                    Maximum of 5 employees can be selected
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

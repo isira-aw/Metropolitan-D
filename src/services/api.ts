@@ -237,12 +237,12 @@ class ApiService {
     return this.handleResponse<MiniJobCardResponse>(response);
   }
 
-  async getMiniJobCardsByEmployee(email: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
-    const response = await fetch(`${BASE_URL}/minijobcards/employee/${encodeURIComponent(email)}`, {
-      headers: this.getAuthHeaders()
-    });
-    return this.handleResponse<MiniJobCardResponse[]>(response);
-  }
+  // async getMiniJobCardsByEmployee(email: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+  //   const response = await fetch(`${BASE_URL}/minijobcards/employee/${encodeURIComponent(email)}`, {
+  //     headers: this.getAuthHeaders()
+  //   });
+  //   return this.handleResponse<MiniJobCardResponse[]>(response);
+  // }
 
   async getMiniJobCardsByJobCard(jobCardId: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
     const response = await fetch(`${BASE_URL}/minijobcards/jobcard/${jobCardId}`, {
@@ -375,6 +375,20 @@ class ApiService {
     return this.handleResponse<string>(response);
   }
 
+async getMiniJobCardsByEmployeeAndDate(email: string, date: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+  const response = await fetch(`${BASE_URL}/minijobcards/employee/${encodeURIComponent(email)}/date/${date}`, {
+    method: 'GET',
+    headers: this.getAuthHeaders() // Use the same auth headers as other methods
+  });
+  return this.handleResponse<MiniJobCardResponse[]>(response);
+}
+
+async getMiniJobCardsByEmployee(email: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+  const response = await fetch(`${BASE_URL}/minijobcards/employee/${encodeURIComponent(email)}`, {
+    headers: this.getAuthHeaders() 
+  });
+  return this.handleResponse<MiniJobCardResponse[]>(response);
+}
 
 }
 

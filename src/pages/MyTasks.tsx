@@ -37,11 +37,11 @@ interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
 
 export const MyTasks: React.FC = () => {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<EnhancedMiniJobCardResponse[]>([]);
+  const [, setTasks] = useState<EnhancedMiniJobCardResponse[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<
     EnhancedMiniJobCardResponse[]
   >([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState<string>("");
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updatingTask, setUpdatingTask] =
@@ -70,9 +70,12 @@ export const MyTasks: React.FC = () => {
     }
   }, [user]);
 
+  // Modified useEffect - now calls loadTasks when filterDate changes
   useEffect(() => {
-    filterTasks();
-  }, [tasks, filterDate]);
+    if (user?.email) {
+      loadTasks();
+    }
+  }, [filterDate, user?.email]);
 
   useEffect(() => {
     if (showUpdateModal && !currentLocation) {
@@ -232,12 +235,24 @@ export const MyTasks: React.FC = () => {
     });
   };
 
+  // UPDATED loadTasks function to use the new date endpoint
   const loadTasks = async () => {
     if (!user?.email) return;
 
     try {
       setLoading(true);
-      const response = await apiService.getMiniJobCardsByEmployee(user.email);
+      let response;
+
+      if (filterDate) {
+        // Use the new date-specific endpoint when a date is selected
+        console.log(`Loading tasks for date: ${filterDate}`);
+        response = await apiService.getMiniJobCardsByEmployeeAndDate(user.email, filterDate);
+      } else {
+        // Use the original endpoint for all tasks when no date filter
+        console.log("Loading all tasks");
+        response = await apiService.getMiniJobCardsByEmployee(user.email);
+      }
+
       if (response.status && response.data) {
         const sortedTasks = response.data.sort((a, b) => {
           const today = new Date().toISOString().split("T")[0];
@@ -254,20 +269,19 @@ export const MyTasks: React.FC = () => {
         });
 
         setTasks(sortedTasks);
+        setFilteredTasks(sortedTasks);
+      } else {
+        // Handle case where no data or unsuccessful response
+        setTasks([]);
+        setFilteredTasks([]);
       }
     } catch (error) {
       console.error("Error loading tasks:", error);
+      setTasks([]);
+      setFilteredTasks([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterTasks = () => {
-    let filtered = tasks;
-    if (filterDate) {
-      filtered = filtered.filter((task) => task.date === filterDate);
-    }
-    setFilteredTasks(filtered);
   };
 
   const handleUpdateTask = (task: EnhancedMiniJobCardResponse) => {
@@ -284,34 +298,34 @@ export const MyTasks: React.FC = () => {
     setLocationAddress("");
   };
 
-const handleSaveUpdate = async () => {
-  if (!updatingTask) return;
+  const handleSaveUpdate = async () => {
+    if (!updatingTask) return;
 
-  const updatedForm = {
-    ...updateForm,
-    location: `${currentLocation?.lat},${currentLocation?.lon}`, 
-    coordinates: {
-      lat: currentLocation?.lat,
-      lon: currentLocation?.lon,
-    },
-  };
+    const updatedForm = {
+      ...updateForm,
+      location: `${currentLocation?.lat},${currentLocation?.lon}`, 
+      coordinates: {
+        lat: currentLocation?.lat,
+        lon: currentLocation?.lon,
+      },
+    };
     try {
-    const response = await apiService.updateMiniJobCard(
-      updatingTask.miniJobCardId,
-      updatedForm
-    );
-    if (response.status) {
-      await loadTasks();
-      setShowUpdateModal(false);
-      setUpdatingTask(null);
-      setUpdateForm({});
-      setCurrentLocation(null);
-      setLocationAddress("");
+      const response = await apiService.updateMiniJobCard(
+        updatingTask.miniJobCardId,
+        updatedForm
+      );
+      if (response.status) {
+        await loadTasks();
+        setShowUpdateModal(false);
+        setUpdatingTask(null);
+        setUpdateForm({});
+        setCurrentLocation(null);
+        setLocationAddress("");
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
     }
-  } catch (error) {
-    console.error("Error updating task:", error);
-  }
-};
+  };
 
   const clearFilters = () => {
     setFilterDate("");
@@ -332,21 +346,12 @@ const handleSaveUpdate = async () => {
     });
   };
 
-  // const formatTime = (timeString: string) => {
-  //   if (!timeString) return "No time set";
-  //   return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //   });
-  // };
-
   const formatTime = (timeString: string) => {
-  if (!timeString) return "No time set";
-  
-  const date = new Date(`2000-01-01T${timeString}`);
-  return date.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
-};
-
+    if (!timeString) return "No time set";
+    
+    const date = new Date(`2000-01-01T${timeString}`);
+    return date.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
+  };
 
   // Get current time in Sri Lanka (Colombo) timezone
   const isToday = (dateString: string) => {
@@ -509,6 +514,19 @@ const handleSaveUpdate = async () => {
               </span>
             </div>
           )}
+
+          {/* Loading indicator */}
+          {loading && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-sm text-slate-600">
+                {filterDate 
+                  ? `Loading tasks for ${formatDate(filterDate)}...` 
+                  : "Loading all tasks..."
+                }
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -562,7 +580,7 @@ const handleSaveUpdate = async () => {
             </div>
 
             {task.estimatedTime && (
-              <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <div className="flex items-center space-x-2 text-sm text-slate-600 mb-3">
                 <Timer className="w-4 h-4" />
                 <span>
                   <span className="font-medium text-red-600">
@@ -579,7 +597,7 @@ const handleSaveUpdate = async () => {
 
             {/* Generator Details */}
             {(task.generatorCapacity || task.generatorDescription) && (
-              <div className=" pb-3 pt-3 bg-slate-150 rounded-lg">
+              <div className="mb-4 p-3 bg-slate-50 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
                   <Settings className="w-4 h-4 text-slate-600" />
                   <span className="text-sm font-medium text-slate-700">
@@ -589,7 +607,7 @@ const handleSaveUpdate = async () => {
                 {task.generatorCapacity && (
                   <p className="text-sm text-slate-600 mb-1">
                     <span className="font-medium">Capacity:</span>{" "}
-                    {task.generatorCapacity} <>KW</>
+                    {task.generatorCapacity} KW
                   </p>
                 )}
                 {task.generatorDescription && (
@@ -709,14 +727,23 @@ const handleSaveUpdate = async () => {
         ))}
       </div>
 
-      {filteredTasks.length === 0 && (
+      {/* No tasks message */}
+      {!loading && filteredTasks.length === 0 && (
         <div className="text-center py-12">
           <Zap className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">
             {filterDate
-              ? `No tasks for ${formatDate(filterDate)}`
+              ? `No tasks found for ${formatDate(filterDate)}`
               : "No tasks assigned to you"}
           </p>
+          {filterDate && (
+            <button
+              onClick={clearFilters}
+              className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              Show all tasks
+            </button>
+          )}
         </div>
       )}
 
@@ -736,31 +763,6 @@ const handleSaveUpdate = async () => {
         size="lg"
       >
         <div className="space-y-6">
-          {/* Generator Info Display */}
-          {/* {updatingTask && (
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <h4 className="font-medium text-slate-900 mb-2">Generator Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-slate-600">Name:</span>
-                  <p className="font-medium">{updatingTask.generatorName || 'N/A'}</p>
-                </div>
-                <div>
-                  <span className="text-slate-600">Capacity:</span>
-                  <p className="font-medium">{updatingTask.generatorCapacity || 'N/A'}</p>
-                </div>
-                <div>
-                  <span className="text-slate-600">Job Type:</span>
-                  <p className="font-medium">{updatingTask.jobType || 'N/A'}</p>
-                </div>
-                <div>
-                  <span className="text-slate-600">Contact:</span>
-                  <p className="font-medium">{updatingTask.generatorContactNumber || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-          )} */}
-
           {/* Current Location */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -936,10 +938,10 @@ const handleSaveUpdate = async () => {
             </button>
             <button
               onClick={handleSaveUpdate}
-              disabled={locationLoading}
+              disabled={locationLoading || !currentLocation}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
             >
-              Update Task
+              {locationLoading ? "Getting Location..." : "Update Task"}
             </button>
           </div>
         </div>
