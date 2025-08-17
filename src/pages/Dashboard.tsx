@@ -207,29 +207,25 @@ export const Dashboard: React.FC = () => {
       title: 'Total Employees',
       value: stats.totalEmployees,
       icon: Users,
-      color: 'bg-blue-500',
-      change: '+12%'
+      color: 'bg-blue-500'
     },
     {
       title: 'Generators',
       value: stats.totalGenerators,
       icon: Zap,
-      color: 'bg-yellow-500',
-      change: '+5%'
+      color: 'bg-yellow-500'
     },
     {
       title: 'Job Cards',
       value: stats.totalJobs,
       icon: ClipboardList,
-      color: 'bg-green-500',
-      change: '+8%'
+      color: 'bg-green-500'
     },
     {
       title: 'Total Tasks',
       value: stats.totalTasks,
       icon: CheckSquare,
-      color: 'bg-purple-500',
-      change: '+15%'
+      color: 'bg-purple-500'
     }
   ];
 
@@ -270,11 +266,11 @@ export const Dashboard: React.FC = () => {
         {cards.map((card, index) => (
           <div key={index} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between">
-              <div>
+              {/* <div>
                 <p className="text-sm font-medium text-slate-600">{card.title}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">{card.value}</p>
                 <p className="text-sm text-green-600 mt-1">{card.change} from last month</p>
-              </div>
+              </div> */}
               <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
                 <card.icon className="w-6 h-6 text-white" />
               </div>
