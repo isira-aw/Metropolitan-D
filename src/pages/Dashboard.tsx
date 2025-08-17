@@ -207,7 +207,8 @@ export const Dashboard: React.FC = () => {
       title: 'Total Employees',
       value: stats.totalEmployees,
       icon: Users,
-      color: 'bg-blue-500'
+      color: 'bg-blue-500',
+      
     },
     {
       title: 'Generators',
@@ -266,11 +267,11 @@ export const Dashboard: React.FC = () => {
         {cards.map((card, index) => (
           <div key={index} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between">
-              {/* <div>
+              <div>
                 <p className="text-sm font-medium text-slate-600">{card.title}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">{card.value}</p>
-                <p className="text-sm text-green-600 mt-1">{card.change} from last month</p>
-              </div> */}
+                {/* <p className="text-sm text-green-600 mt-1">{card.change} from last month</p> */}
+              </div> 
               <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
                 <card.icon className="w-6 h-6 text-white" />
               </div>
