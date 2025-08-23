@@ -246,7 +246,10 @@ export const MyTasks: React.FC = () => {
       if (filterDate) {
         // Use the new date-specific endpoint when a date is selected
         console.log(`Loading tasks for date: ${filterDate}`);
-        response = await apiService.getMiniJobCardsByEmployeeAndDate(user.email, filterDate);
+        response = await apiService.getMiniJobCardsByEmployeeAndDate(
+          user.email,
+          filterDate
+        );
       } else {
         // Use the original endpoint for all tasks when no date filter
         console.log("Loading all tasks");
@@ -297,13 +300,22 @@ export const MyTasks: React.FC = () => {
     setCurrentLocation(null);
     setLocationAddress("");
   };
+  const [isUpdating, setIsUpdating] = useState(false);
 
+  const handleClick = async () => {
+    setIsUpdating(true);
+    try {
+      await handleSaveUpdate();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
   const handleSaveUpdate = async () => {
     if (!updatingTask) return;
 
     const updatedForm = {
       ...updateForm,
-      location: `${currentLocation?.lat},${currentLocation?.lon}`, 
+      location: `${currentLocation?.lat},${currentLocation?.lon}`,
       coordinates: {
         lat: currentLocation?.lat,
         lon: currentLocation?.lon,
@@ -348,9 +360,12 @@ export const MyTasks: React.FC = () => {
 
   const formatTime = (timeString: string) => {
     if (!timeString) return "No time set";
-    
+
     const date = new Date(`2000-01-01T${timeString}`);
-    return date.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   // Get current time in Sri Lanka (Colombo) timezone
@@ -452,6 +467,7 @@ export const MyTasks: React.FC = () => {
           </div>
         </div>
       )}
+      <h1 className="text-2xl font-bold ml-5">My Tasks</h1>
 
       {/* Enhanced Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -520,10 +536,9 @@ export const MyTasks: React.FC = () => {
             <div className="flex items-center justify-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
               <span className="ml-2 text-sm text-slate-600">
-                {filterDate 
-                  ? `Loading tasks for ${formatDate(filterDate)}...` 
-                  : "Loading all tasks..."
-                }
+                {filterDate
+                  ? `Loading tasks for ${formatDate(filterDate)}...`
+                  : "Loading all tasks..."}
               </span>
             </div>
           )}
@@ -541,6 +556,9 @@ export const MyTasks: React.FC = () => {
                 : "border-slate-200"
             }`}
           >
+            <div className="flex justify-end mb-2">
+              <StatusBadge status={task.status} />
+            </div>
             {/* Task Header with Generator Info */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start space-x-3">
@@ -576,7 +594,6 @@ export const MyTasks: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <StatusBadge status={task.status} />
             </div>
 
             {task.estimatedTime && (
@@ -844,6 +861,7 @@ export const MyTasks: React.FC = () => {
               </label>
               <input
                 type="date"
+                readOnly // if need to edite remove this
                 value={updateForm.date || ""}
                 onChange={(e) =>
                   setUpdateForm((prev) => ({ ...prev, date: e.target.value }))
@@ -853,7 +871,7 @@ export const MyTasks: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Time
+                Total time you spent on this task.
               </label>
               <div className="flex gap-2">
                 <select
@@ -914,7 +932,7 @@ export const MyTasks: React.FC = () => {
               }
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="PENDING">Pending</option>
+              {/* <option value="PENDING">Pending</option> */}
               <option value="ASSIGNED">Assigned</option>
               <option value="IN_PROGRESS">In Progress</option>
               <option value="ON_HOLD">On Hold</option>
@@ -936,12 +954,54 @@ export const MyTasks: React.FC = () => {
             >
               Cancel
             </button>
-            <button
+            {/* <button
               onClick={handleSaveUpdate}
               disabled={locationLoading || !currentLocation}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
             >
               {locationLoading ? "Getting Location..." : "Update Task"}
+            </button> */}
+            <button
+              onClick={handleClick}
+              disabled={locationLoading || !currentLocation || isUpdating}
+              className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center justify-center gap-2
+        ${
+          isUpdating
+            ? "bg-green-600 animate-pulse"
+            : locationLoading
+            ? "bg-blue-400"
+            : "bg-blue-600 hover:bg-blue-700"
+        }`}
+            >
+              {locationLoading ? (
+                "Getting Location..."
+              ) : isUpdating ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+                    ></path>
+                  </svg>
+                  Updating...
+                </>
+              ) : (
+                "Update Task"
+              )}
             </button>
           </div>
         </div>
