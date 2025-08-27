@@ -1,5 +1,5 @@
 // components/MyTasks/TasksDisplay.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { format } from "date-fns-tz";
 import {
   Clock,
@@ -99,6 +99,13 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
     getCurrentLocation,
   } = locationContext;
 
+  // Auto-set today's filter on component mount
+  useEffect(() => {
+    if (!filterDate) {
+      setTodayFilter();
+    }
+  }, []);
+
   const formatTime = (timeString: string) => {
     if (!timeString) return "No time set";
 
@@ -135,57 +142,52 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
 
   return (
     <>
-      {/* Enhanced Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="space-y-4">
-          {/* Date Filter Only */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Filter by Date
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                  className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                {filterDate && (
-                  <button
-                    onClick={() => setFilterDate("")}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-end">
-              <button
-                onClick={setTodayFilter}
-                className="w-full bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Today's Tasks
-              </button>
-            </div>
-
-            <div className="flex items-end">
-              <button
-                onClick={clearFilters}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Clear Filters
-              </button>
+      {/* Compact Date Filter */}
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Date Input */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-slate-700 whitespace-nowrap">
+              Date:
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              />
+              {filterDate && (
+                <button
+                  onClick={() => setFilterDate("")}
+                  className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Active Filters Display */}
+          {/* Quick Action Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={setTodayFilter}
+              className="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+            >
+              Today
+            </button>
+            <button
+              onClick={clearFilters}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+            >
+              All Tasks
+            </button>
+          </div>
+
+          {/* Active Filter Display */}
           {filterDate && (
-            <div className="flex items-center space-x-2 pt-2 border-t border-slate-200">
-              <span className="text-sm text-slate-600">Active filter:</span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 {formatDate(filterDate)}
                 <button
                   onClick={() => setFilterDate("")}
@@ -199,13 +201,9 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
 
           {/* Loading indicator */}
           {loading && (
-            <div className="flex items-center justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-sm text-slate-600">
-                {filterDate
-                  ? `Loading tasks for ${formatDate(filterDate)}...`
-                  : "Loading all tasks..."}
-              </span>
+            <div className="flex items-center gap-2 ml-auto">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-xs text-slate-600">Loading...</span>
             </div>
           )}
         </div>

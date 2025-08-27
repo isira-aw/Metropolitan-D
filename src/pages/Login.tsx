@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, X, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
 import { LoadingSpinner } from "../components/UI/LoadingSpinner";
@@ -117,25 +117,11 @@ export const Login: React.FC = () => {
     navigate("/forgot-password");
   };
 
-    const handleGoBack = () => {
-    navigate(-1); // Goes back to the previous page in history
-  };
-
   return (
     <div className="min-h-screen bg-[#0F172A] to-slate-900 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {/* Back Button */}
-          <div className="mb-4">
-            <button
-              onClick={handleGoBack}
-              className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="text-sm font-medium">Back</span>
-            </button>
-          </div>
           <div className="text-center mb-8">
             <div className="w-40 h-0 pb-[20%] relative flex items-center justify-center mx-auto mb-4">
               <img
