@@ -228,3 +228,21 @@ export interface LogFilter {
   action?: string;
   status?: string;
 }
+
+//gen email sending
+export interface SendJobCardEmailRequest {
+  jobCardId: string;
+  recipientEmail: string;
+  recipientName: string;
+  subject: string;
+  message: string;
+}
+
+export interface EmailResponse {
+  emailId: string;
+  jobCardId: string;
+  recipientEmail: string;
+  subject: string;
+  sentAt: string;
+  status: "SENT" | "FAILED" | "PENDING";
+}

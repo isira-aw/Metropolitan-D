@@ -17,7 +17,9 @@ import {
   ReportRequest,
   ReportDataResponse,
   ResetPasswordRequest,
-  ForgotPasswordRequest
+  ForgotPasswordRequest,
+  SendJobCardEmailRequest,
+  EmailResponse
 } from '../types/api';
 
 // const BASE_URL = 'http://localhost:8080/api';
@@ -394,6 +396,27 @@ async getMiniJobCardsByEmployee(email: string): Promise<ApiResponse<MiniJobCardR
     headers: this.getAuthHeaders() 
   });
   return this.handleResponse<MiniJobCardResponse[]>(response);
+}
+
+// Add this method to your apiService.ts file
+async sendJobCardEmail(emailData: SendJobCardEmailRequest): Promise<ApiResponse<EmailResponse>> {
+  const response = await fetch(`${BASE_URL}/emails/jobcard`, {
+    method: 'POST',
+    headers: {
+      ...this.getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(emailData),
+  });
+  return this.handleResponse<EmailResponse>(response);
+}
+
+// Get email history for a job card
+async getJobCardEmails(jobCardId: string): Promise<ApiResponse<EmailResponse[]>> {
+  const response = await fetch(`${BASE_URL}/emails/jobcard/${jobCardId}`, {
+    headers: this.getAuthHeaders()
+  });
+  return this.handleResponse<EmailResponse[]>(response);
 }
 
 }
