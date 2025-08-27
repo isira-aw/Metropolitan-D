@@ -10,6 +10,7 @@ import {
 import { LocationManager } from "../components/MyTasks/LocationManager";
 import { TasksDisplay } from "../components/MyTasks/TasksDisplay";
 
+
 // Enhanced interface
 interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
   jobType?: "SERVICE" | "REPAIR";
@@ -38,7 +39,6 @@ interface LocationContextType {
   getCurrentLocation: () => Promise<void>;
   requestLocationPermission: () => Promise<boolean>;
   setShowLocationAlert: (show: boolean) => void;
-  refreshLocationStatus: () => Promise<void>;
 }
 
 export const MyTasks: React.FC = () => {
@@ -62,19 +62,11 @@ export const MyTasks: React.FC = () => {
   const [locationError, setLocationError] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Auto-set today's filter on component mount
   useEffect(() => {
-    const today = format(new Date(), "yyyy-MM-dd", {
-      timeZone: "Asia/Colombo",
-    });
-    setFilterDate(today);
-  }, []);
-
-  useEffect(() => {
-    if (user?.email && locationPermission === "granted") {
+    if (user?.email) {
       loadTasks();
     }
-  }, [user, filterDate, locationPermission]);
+  }, [user, filterDate]);
 
   useEffect(() => {
     if (showUpdateModal && !currentLocation) {
@@ -91,11 +83,8 @@ export const MyTasks: React.FC = () => {
   // Location functions
   const getCurrentLocation = async () => {
     setLocationLoading(true);
-    setLocationError("");
-    
     if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by this browser");
-      setLocationPermission("denied");
+      console.error("Geolocation is not supported by this browser");
       setLocationLoading(false);
       return;
     }
@@ -104,36 +93,16 @@ export const MyTasks: React.FC = () => {
       (position) => {
         const { latitude, longitude } = position.coords;
         setCurrentLocation({ lat: latitude, lon: longitude });
-        setLocationPermission("granted");
         setLocationLoading(false);
-        setLocationError("");
       },
       (error) => {
         console.error("Error getting location:", error);
+        setLocationAddress("Unable to get current location");
         setLocationLoading(false);
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationPermission("denied");
-            setLocationError("Location access was denied. Please enable location access in your browser settings.");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setLocationPermission("denied");
-            setLocationError("Location information is unavailable. Please check your device's location settings.");
-            break;
-          case error.TIMEOUT:
-            setLocationError("Location request timed out. Please try again.");
-            // Don't set to denied for timeout, allow retry
-            break;
-          default:
-            setLocationPermission("denied");
-            setLocationError("An unknown error occurred while retrieving location.");
-            break;
-        }
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 10000,
         maximumAge: 300000,
       }
     );
@@ -160,9 +129,6 @@ export const MyTasks: React.FC = () => {
   };
 
   const checkLocationPermission = async () => {
-    setLocationPermission("checking");
-    setLocationError("");
-    
     if (!navigator.geolocation) {
       setLocationPermission("denied");
       setLocationError("Geolocation is not supported by this browser");
@@ -174,45 +140,32 @@ export const MyTasks: React.FC = () => {
         const permission = await navigator.permissions.query({
           name: "geolocation",
         });
-        
-        const currentState = permission.state as "granted" | "denied" | "prompt";
-        setLocationPermission(currentState);
-
-        if (currentState === "granted") {
-          await getCurrentLocation();
-        } else if (currentState === "denied") {
-          setLocationError("Location access has been denied in browser settings");
-        }
+        setLocationPermission(
+          permission.state as "granted" | "denied" | "prompt"
+        );
 
         permission.onchange = () => {
-          const newState = permission.state as "granted" | "denied" | "prompt";
-          setLocationPermission(newState);
-          if (newState === "granted") {
-            getCurrentLocation();
-          }
+          setLocationPermission(
+            permission.state as "granted" | "denied" | "prompt"
+          );
         };
       } else {
-        // Fallback for browsers without permissions API
-        setLocationPermission("prompt");
-        await getCurrentLocation();
+        navigator.geolocation.getCurrentPosition(
+          () => setLocationPermission("granted"),
+          (error) => {
+            if (error.code === error.PERMISSION_DENIED) {
+              setLocationPermission("denied");
+            } else {
+              setLocationPermission("prompt");
+            }
+          }
+        );
       }
     } catch (error) {
       console.error("Error checking location permission:", error);
-      setLocationPermission("prompt");
+      setLocationPermission("denied");
       setLocationError("Unable to check location permission");
     }
-  };
-
-  const refreshLocationStatus = async () => {
-    setLocationError("");
-    setLocationLoading(true);
-    
-    // Reset states
-    setCurrentLocation(null);
-    setLocationAddress("");
-    
-    // Recheck permission and try to get location
-    await checkLocationPermission();
   };
 
   const requestLocationPermission = async () => {
@@ -233,7 +186,7 @@ export const MyTasks: React.FC = () => {
           setCurrentLocation({ lat: latitude, lon: longitude });
           setLocationPermission("granted");
           setLocationLoading(false);
-          setLocationError("");
+          setShowLocationAlert(false);
           resolve(true);
         },
         (error) => {
@@ -241,25 +194,29 @@ export const MyTasks: React.FC = () => {
           switch (error.code) {
             case error.PERMISSION_DENIED:
               setLocationPermission("denied");
-              setLocationError("Location access denied. Please enable location in browser settings.");
+              setLocationError(
+                "Location access denied. Please enable location in browser settings."
+              );
               break;
             case error.POSITION_UNAVAILABLE:
-              setLocationPermission("denied");
-              setLocationError("Location information unavailable. Please check your device settings.");
+              setLocationError(
+                "Location information unavailable. Please try again."
+              );
               break;
             case error.TIMEOUT:
               setLocationError("Location request timed out. Please try again.");
               break;
             default:
-              setLocationPermission("denied");
-              setLocationError("An unknown error occurred while retrieving location.");
+              setLocationError(
+                "An unknown error occurred while retrieving location."
+              );
               break;
           }
           resolve(false);
         },
         {
           enableHighAccuracy: true,
-          timeout: 15000,
+          timeout: 10000,
           maximumAge: 300000,
         }
       );
@@ -401,55 +358,55 @@ export const MyTasks: React.FC = () => {
     getCurrentLocation,
     requestLocationPermission,
     setShowLocationAlert,
-    refreshLocationStatus,
   };
 
   return (
-    <LocationManager locationContext={locationContext}>
-      <div className="space-y-4 sm:space-y-6">
-        <h1 className="text-2xl font-bold mx-4 sm:ml-5">My Tasks</h1>
+    <div className="space-y-6">
+      {/* Location Management Component */}
+      <LocationManager locationContext={locationContext} />
+      
+      <h1 className="text-2xl font-bold ml-5">My Tasks</h1>
 
-        {/* Tasks Display Component (includes filters, grid, and modal) */}
-        <TasksDisplay
-          tasks={filteredTasks}
-          loading={loading}
-          filterDate={filterDate}
-          setFilterDate={setFilterDate}
-          setTodayFilter={setTodayFilter}
-          clearFilters={clearFilters}
-          formatDate={formatDate}
-          showUpdateModal={showUpdateModal}
-          setShowUpdateModal={setShowUpdateModal}
-          updatingTask={updatingTask}
-          setUpdatingTask={setUpdatingTask}
-          updateForm={updateForm}
-          setUpdateForm={setUpdateForm}
-          locationContext={locationContext}
-          onUpdateTask={handleUpdateTask}
-          onSaveUpdate={handleSaveUpdate}
-          isUpdating={isUpdating}
-        />
+      {/* Tasks Display Component (includes filters, grid, and modal) */}
+      <TasksDisplay
+        tasks={filteredTasks}
+        loading={loading}
+        filterDate={filterDate}
+        setFilterDate={setFilterDate}
+        setTodayFilter={setTodayFilter}
+        clearFilters={clearFilters}
+        formatDate={formatDate}
+        showUpdateModal={showUpdateModal}
+        setShowUpdateModal={setShowUpdateModal}
+        updatingTask={updatingTask}
+        setUpdatingTask={setUpdatingTask}
+        updateForm={updateForm}
+        setUpdateForm={setUpdateForm}
+        locationContext={locationContext}
+        onUpdateTask={handleUpdateTask}
+        onSaveUpdate={handleSaveUpdate}
+        isUpdating={isUpdating}
+      />
 
-        {/* No tasks message */}
-        {!loading && filteredTasks.length === 0 && (
-          <div className="text-center py-12 mx-4 sm:mx-0">
-            <Zap className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500">
-              {filterDate
-                ? `No tasks found for ${formatDate(filterDate)}`
-                : "No tasks assigned to you"}
-            </p>
-            {filterDate && (
-              <button
-                onClick={clearFilters}
-                className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                Show all tasks
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </LocationManager>
+      {/* No tasks message */}
+      {!loading && filteredTasks.length === 0 && (
+        <div className="text-center py-12">
+          <Zap className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500">
+            {filterDate
+              ? `No tasks found for ${formatDate(filterDate)}`
+              : "No tasks assigned to you"}
+          </p>
+          {filterDate && (
+            <button
+              onClick={clearFilters}
+              className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              Show all tasks
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
