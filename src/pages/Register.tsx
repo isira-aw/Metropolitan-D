@@ -197,14 +197,6 @@ export const Register: React.FC = () => {
             </button>
           </form>
 
-          {/* <div className="mt-6 text-center">
-            <p className="text-slate-600">
-              Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                Sign in here
-              </Link>
-            </p>
-          </div> */}
         </div>
       </div>
     </div>

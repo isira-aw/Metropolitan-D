@@ -223,6 +223,12 @@ class ApiService {
   }
 
   // Mini Job Cards
+async getMiniJobCardsByJobCard(jobCardId: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+  const response = await fetch(`${BASE_URL}/minijobcards/jobcard/${jobCardId}`, {
+    headers: this.getAuthHeaders()
+  });
+  return this.handleResponse<MiniJobCardResponse[]>(response);
+}
   async getAllMiniJobCards(): Promise<ApiResponse<MiniJobCardResponse[]>> {
     const response = await fetch(`${BASE_URL}/minijobcards`, {
       headers: this.getAuthHeaders()
@@ -244,12 +250,12 @@ class ApiService {
   //   return this.handleResponse<MiniJobCardResponse[]>(response);
   // }
 
-  async getMiniJobCardsByJobCard(jobCardId: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
-    const response = await fetch(`${BASE_URL}/minijobcards/jobcard/${jobCardId}`, {
-      headers: this.getAuthHeaders()
-    });
-    return this.handleResponse<MiniJobCardResponse[]>(response);
-  }
+  // async getMiniJobCardsByJobCard(jobCardId: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+  //   const response = await fetch(`${BASE_URL}/minijobcards/jobcard/${jobCardId}`, {
+  //     headers: this.getAuthHeaders()
+  //   });
+  //   return this.handleResponse<MiniJobCardResponse[]>(response);
+  // }
 
   async getMiniJobCardsByStatus(status: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
     const response = await fetch(`${BASE_URL}/minijobcards/status/${status}`, {

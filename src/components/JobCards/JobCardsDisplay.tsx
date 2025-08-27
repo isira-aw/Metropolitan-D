@@ -12,6 +12,7 @@ import {
   Search,
   ChevronDown,
   X,
+  Eye,
 } from "lucide-react";
 import {
   JobCardResponse,
@@ -20,6 +21,7 @@ import {
   CreateJobCardRequest,
 } from "../../types/api";
 import { Modal } from "../UI/Modal";
+import { JobCardDetailView } from "./JobCardDetailView";
 
 // Searchable Generator Select Component
 interface SearchableGeneratorSelectProps {
@@ -256,11 +258,25 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
   handleCreateJob,
   resetForm,
 }) => {
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [selectedJobCard, setSelectedJobCard] = useState<JobCardResponse | null>(null);
+
   const formatTime = (timeString: string) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const openDetailView = (jobCard: JobCardResponse) => {
+    setSelectedJobCard(jobCard);
+    setShowDetailView(true);
+    setShowDropdown(null);
+  };
+
+  const closeDetailView = () => {
+    setShowDetailView(false);
+    setSelectedJobCard(null);
   };
 
   return (
@@ -295,6 +311,13 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
+                        onClick={() => openDetailView(job)}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>View Details</span>
+                      </button>
+                      <button
                         onClick={() => openDeleteModal(job)}
                         className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
                       >
@@ -324,7 +347,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                         }`}
                       />
                     ) : (
-                      <Wrench className="w-6 h-6 text-orange-600 " />
+                      <Wrench className="w-6 h-6 text-orange-600" />
                     )}
                   </div>
                   <div>
@@ -391,6 +414,14 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Job Card Detail View Modal */}
+      {showDetailView && selectedJobCard && (
+        <JobCardDetailView
+          jobCard={selectedJobCard}
+          onClose={closeDetailView}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
