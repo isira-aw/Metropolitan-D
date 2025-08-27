@@ -12,6 +12,7 @@ import {
   Search,
   ChevronDown,
   X,
+  Eye,
 } from "lucide-react";
 import {
   JobCardResponse,
@@ -20,6 +21,7 @@ import {
   CreateJobCardRequest,
 } from "../../types/api";
 import { Modal } from "../UI/Modal";
+import { JobCardDetailView } from "./JobCardDetailView";
 
 // Searchable Generator Select Component
 interface SearchableGeneratorSelectProps {
@@ -35,22 +37,24 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
   value,
   onChange,
   placeholder = "Select a generator",
-  className = ""
+  className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredGenerators, setFilteredGenerators] = useState<GeneratorResponse[]>(generators);
-  const [selectedGenerator, setSelectedGenerator] = useState<GeneratorResponse | null>(null);
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredGenerators, setFilteredGenerators] =
+    useState<GeneratorResponse[]>(generators);
+  const [selectedGenerator, setSelectedGenerator] =
+    useState<GeneratorResponse | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Filter generators based on search term
   useEffect(() => {
-    if (searchTerm.trim() === '') {
+    if (searchTerm.trim() === "") {
       setFilteredGenerators(generators);
     } else {
-      const filtered = generators.filter(generator =>
+      const filtered = generators.filter((generator) =>
         generator.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredGenerators(filtered);
@@ -59,21 +63,24 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
 
   // Find selected generator when value changes
   useEffect(() => {
-    const selected = generators.find(gen => gen.generatorId === value);
+    const selected = generators.find((gen) => gen.generatorId === value);
     setSelectedGenerator(selected || null);
   }, [value, generators]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
-        setSearchTerm('');
+        setSearchTerm("");
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Focus search input when dropdown opens
@@ -87,20 +94,20 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
     onChange(generator.generatorId);
     setSelectedGenerator(generator);
     setIsOpen(false);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange('');
+    onChange("");
     setSelectedGenerator(null);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
-      setSearchTerm('');
+      setSearchTerm("");
     }
   };
 
@@ -112,11 +119,12 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
         onClick={toggleDropdown}
         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between hover:border-slate-400 transition-colors"
       >
-        <span className={selectedGenerator ? "text-slate-900" : "text-slate-500"}>
-          {selectedGenerator 
-            ? `${selectedGenerator.name} - ${selectedGenerator.capacity}` 
-            : placeholder
-          }
+        <span
+          className={selectedGenerator ? "text-slate-900" : "text-slate-500"}
+        >
+          {selectedGenerator
+            ? `${selectedGenerator.name} - ${selectedGenerator.capacity}`
+            : placeholder}
         </span>
         <div className="flex items-center space-x-2">
           {selectedGenerator && (
@@ -128,7 +136,11 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
               <X className="w-4 h-4" />
             </button>
           )}
-          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-4 h-4 text-slate-400 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
         </div>
       </button>
 
@@ -158,10 +170,10 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    onChange('');
+                    onChange("");
                     setSelectedGenerator(null);
                     setIsOpen(false);
-                    setSearchTerm('');
+                    setSearchTerm("");
                   }}
                   className="w-full px-3 py-2 text-left hover:bg-slate-50 text-slate-500 border-b border-slate-100"
                 >
@@ -173,9 +185,9 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
                     type="button"
                     onClick={() => handleSelect(generator)}
                     className={`w-full px-3 py-3 text-left hover:bg-blue-50 border-b border-slate-100 last:border-b-0 transition-colors ${
-                      selectedGenerator?.generatorId === generator.generatorId 
-                        ? 'bg-blue-50 text-blue-700' 
-                        : 'text-slate-900'
+                      selectedGenerator?.generatorId === generator.generatorId
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-slate-900"
                     }`}
                   >
                     <div className="flex flex-col">
@@ -256,11 +268,26 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
   handleCreateJob,
   resetForm,
 }) => {
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [selectedJobCard, setSelectedJobCard] =
+    useState<JobCardResponse | null>(null);
+
   const formatTime = (timeString: string) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const openDetailView = (jobCard: JobCardResponse) => {
+    setSelectedJobCard(jobCard);
+    setShowDetailView(true);
+    setShowDropdown(null);
+  };
+
+  const closeDetailView = () => {
+    setShowDetailView(false);
+    setSelectedJobCard(null);
   };
 
   return (
@@ -276,24 +303,38 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
               {/* Actions Dropdown */}
               <div className="absolute top-4 right-4">
                 <div className="relative">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDropdown(
-                        showDropdown === job.jobCardId ? null : job.jobCardId
-                      );
-                    }}
-                    className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-                    aria-label="More actions"
-                  >
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
-
+                  <div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDropdown(
+                          showDropdown === job.jobCardId ? null : job.jobCardId
+                        );
+                      }}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                      aria-label="More actions"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => openDetailView(job)}
+                      className=" px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </div>
                   {showDropdown === job.jobCardId && (
                     <div
                       className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <button
+                        onClick={() => openDetailView(job)}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>View Details</span>
+                      </button>
                       <button
                         onClick={() => openDeleteModal(job)}
                         className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
@@ -324,7 +365,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                         }`}
                       />
                     ) : (
-                      <Wrench className="w-6 h-6 text-orange-600 " />
+                      <Wrench className="w-6 h-6 text-orange-600" />
                     )}
                   </div>
                   <div>
@@ -335,8 +376,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                       {job.generator.capacity} KW
                     </p>
                   </div>
-                </div>
-                <span
+                  <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     job.jobType === "SERVICE"
                       ? "bg-green-100 text-green-800"
@@ -345,6 +385,8 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                 >
                   {job.jobType}
                 </span>
+                </div>
+                
               </div>
 
               <div className="space-y-3 mb-4">
@@ -391,6 +433,14 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Job Card Detail View Modal */}
+      {showDetailView && selectedJobCard && (
+        <JobCardDetailView
+          jobCard={selectedJobCard}
+          onClose={closeDetailView}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
@@ -601,9 +651,10 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
           {/* Employee Selection with Search */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Assign Employees (max 5) - {formData.employeeEmails.length} selected
+              Assign Employees (max 5) - {formData.employeeEmails.length}{" "}
+              selected
             </label>
-            
+
             {/* Search Input */}
             <div className="relative mb-3">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
@@ -616,7 +667,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
               />
               {employeeSearchTerm && (
                 <button
-                  onClick={() => setEmployeeSearchTerm('')}
+                  onClick={() => setEmployeeSearchTerm("")}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
                   title="Clear search"
                 >
@@ -628,10 +679,14 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
             {/* Selected Employees Summary */}
             {formData.employeeEmails.length > 0 && (
               <div className="mb-3 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-blue-900 mb-2">Selected Employees:</p>
+                <p className="text-sm font-medium text-blue-900 mb-2">
+                  Selected Employees:
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {formData.employeeEmails.map((email) => {
-                    const employee = employees.find(emp => emp.email === email);
+                    const employee = employees.find(
+                      (emp) => emp.email === email
+                    );
                     return employee ? (
                       <span
                         key={email}
@@ -661,13 +716,15 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                       key={employee.email}
                       className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
                         formData.employeeEmails.includes(employee.email)
-                          ? 'bg-blue-50 border border-blue-200'
-                          : 'hover:bg-slate-50 border border-transparent'
+                          ? "bg-blue-50 border border-blue-200"
+                          : "hover:bg-slate-50 border border-transparent"
                       }`}
                     >
                       <input
                         type="checkbox"
-                        checked={formData.employeeEmails.includes(employee.email)}
+                        checked={formData.employeeEmails.includes(
+                          employee.email
+                        )}
                         onChange={() => handleEmployeeToggle(employee.email)}
                         disabled={
                           !formData.employeeEmails.includes(employee.email) &&
@@ -679,7 +736,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                         <p className="text-sm font-medium text-slate-900">
                           {employee.name}
                         </p>
-                        <p className="text-xs text-slate-500">{employee.email}</p>
+                        <p className="text-xs text-slate-500">
+                          {employee.email}
+                        </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <span
@@ -692,7 +751,10 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                           {employee.role}
                         </span>
                         {formData.employeeEmails.includes(employee.email) && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full" title="Selected"></div>
+                          <div
+                            className="w-2 h-2 bg-blue-500 rounded-full"
+                            title="Selected"
+                          ></div>
                         )}
                       </div>
                     </label>
@@ -705,7 +767,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                       <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                       <p>No employees found matching "{employeeSearchTerm}"</p>
                       <button
-                        onClick={() => setEmployeeSearchTerm('')}
+                        onClick={() => setEmployeeSearchTerm("")}
                         className="mt-2 text-sm text-blue-600 hover:text-blue-700"
                       >
                         Clear search
@@ -726,7 +788,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
               <div className="flex space-x-2">
                 {formData.employeeEmails.length > 0 && (
                   <button
-                    onClick={() => setFormData(prev => ({ ...prev, employeeEmails: [] }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, employeeEmails: [] }))
+                    }
                     className="text-red-600 hover:text-red-700 font-medium"
                   >
                     Clear All
@@ -734,7 +798,8 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                 )}
               </div>
               <div className="text-slate-500">
-                {filteredEmployees.length} employee{filteredEmployees.length !== 1 ? 's' : ''} available
+                {filteredEmployees.length} employee
+                {filteredEmployees.length !== 1 ? "s" : ""} available
                 {formData.employeeEmails.length >= 5 && (
                   <span className="block text-orange-600 text-xs mt-1">
                     Maximum of 5 employees can be selected

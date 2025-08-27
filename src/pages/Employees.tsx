@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Search, Edit, Trash2, Phone, Plus } from "lucide-react";
+import { Search, Edit, Trash2, Phone, Plus, Eye, EyeOff } from "lucide-react";
 import { apiService } from "../services/api";
 import { EmployeeResponse, UpdateEmployeeRequest } from "../types/api";
 import { LoadingSpinner } from "../components/UI/LoadingSpinner";
 import { Modal } from "../components/UI/Modal";
-import { Link } from "react-router-dom";
 
 export const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
@@ -14,6 +13,7 @@ export const Employees: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [editingEmployee, setEditingEmployee] =
     useState<EmployeeResponse | null>(null);
   const [editForm, setEditForm] = useState<UpdateEmployeeRequest>({
@@ -21,6 +21,19 @@ export const Employees: React.FC = () => {
     contactNumber: "",
     role: "EMPLOYEE",
   });
+
+  // Register form state
+  const [registerForm, setRegisterForm] = useState({
+    name: '',
+    email: '',
+    contactNumber: '',
+    role: 'EMPLOYEE' as 'ADMIN' | 'EMPLOYEE',
+    password: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState('');
+  const [registerSuccess, setRegisterSuccess] = useState('');
 
   useEffect(() => {
     loadEmployees();
@@ -91,6 +104,65 @@ export const Employees: React.FC = () => {
     }
   };
 
+  // Register form handlers
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegisterLoading(true);
+    setRegisterError('');
+    setRegisterSuccess('');
+
+    try {
+      const response = await apiService.register(registerForm);
+      if (response.status) {
+        setRegisterSuccess('Employee registered successfully!');
+        // Reset form
+        setRegisterForm({
+          name: '',
+          email: '',
+          contactNumber: '',
+          role: 'EMPLOYEE',
+          password: ''
+        });
+        // Reload employees list
+        await loadEmployees();
+        // Close modal after 1.5 seconds
+        setTimeout(() => {
+          setShowRegisterModal(false);
+          setRegisterSuccess('');
+        }, 1500);
+      } else {
+        setRegisterError(response.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      setRegisterError('Network error. Please check if the server is running.');
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setRegisterForm(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const openRegisterModal = () => {
+    // Reset form and states when opening modal
+    setRegisterForm({
+      name: '',
+      email: '',
+      contactNumber: '',
+      role: 'EMPLOYEE',
+      password: ''
+    });
+    setShowPassword(false);
+    setRegisterError('');
+    setRegisterSuccess('');
+    setShowRegisterModal(true);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -112,14 +184,14 @@ export const Employees: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Employees</h1>
-          {/* <p className="text-slate-600 mt-2">Manage your team members</p> */}
         </div>
-        <Link to="/register8f3b56f79e4a4f21a4c75b8f273617f8">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-            <Plus className="w-4 h-4" />
-            <span>Add Employee</span>
-          </button>
-        </Link>
+        <button 
+          onClick={openRegisterModal}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Employee</span>
+        </button>
       </div>
 
       {/* Search */}
@@ -287,16 +359,6 @@ export const Employees: React.FC = () => {
               <option value="ADMIN">Admin</option>
             </select>
           </div>
-          {/* <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">New Password (optional)</label>
-            <input
-              type="password"
-              value={editForm.password || ''}
-              onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Leave blank to keep current password"
-            />
-          </div> */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               onClick={() => setShowEditModal(false)}
@@ -311,6 +373,144 @@ export const Employees: React.FC = () => {
               Save Changes
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Register Modal */}
+      <Modal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+        title="Add New Employee"
+        size="lg"
+      >
+        <div className="space-y-4">
+          {registerError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {registerError}
+            </div>
+          )}
+
+          {registerSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+              {registerSuccess}
+            </div>
+          )}
+
+          <form onSubmit={handleRegisterSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={registerForm.name}
+                onChange={handleRegisterChange}
+                required
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="Enter full name"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={registerForm.email}
+                onChange={handleRegisterChange}
+                required
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="Enter email address"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="contactNumber" className="block text-sm font-medium text-slate-700 mb-2">
+                Contact Number
+              </label>
+              <input
+                type="tel"
+                id="contactNumber"
+                name="contactNumber"
+                value={registerForm.contactNumber}
+                onChange={handleRegisterChange}
+                required
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="Enter contact number"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-2">
+                Role
+              </label>
+              <select
+                id="role"
+                name="role"
+                value={registerForm.role}
+                onChange={handleRegisterChange}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              >
+                <option value="EMPLOYEE">Employee</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={registerForm.password}
+                  onChange={handleRegisterChange}
+                  required
+                  className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Enter password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowRegisterModal(false)}
+                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                disabled={registerLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={registerLoading}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+              >
+                {registerLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <span>Create Employee</span>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </Modal>
     </div>
