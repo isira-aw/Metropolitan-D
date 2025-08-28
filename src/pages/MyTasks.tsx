@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns-tz";
-import { Zap } from "lucide-react";
+import { Zap, MapPin, AlertTriangle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
 import {
@@ -9,7 +9,6 @@ import {
 } from "../types/api";
 import { LocationManager } from "../components/MyTasks/LocationManager";
 import { TasksDisplay } from "../components/MyTasks/TasksDisplay";
-
 
 // Enhanced interface
 interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
@@ -41,6 +40,99 @@ interface LocationContextType {
   setShowLocationAlert: (show: boolean) => void;
 }
 
+// Location Requirement Guard Component
+const LocationRequirementGuard: React.FC<{
+  onEnableLocation: () => void;
+  onRefresh: () => void;
+  locationLoading: boolean;
+  locationError: string;
+}> = ({ onEnableLocation, onRefresh, locationLoading, locationError }) => {
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
+  return (
+    <>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <MapPin className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Location Access Required
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Please enable location services to access this page.
+            </p>
+          </div>
+
+          {locationError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                <p className="text-red-700 text-sm">{locationError}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <button
+              onClick={onEnableLocation}
+              disabled={locationLoading}
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                locationLoading
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              {locationLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Requesting Access...
+                </div>
+              ) : (
+                "Enable Location Access"
+              )}
+            </button>
+
+            <button
+              onClick={onRefresh}
+              className="w-full py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Refresh
+            </button>
+
+            <button
+              onClick={() => setShowHelpModal(true)}
+              className="w-full py-2 px-4 text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              How to Fix?
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">How to Enable Location</h3>
+            <div className="text-sm text-gray-700 space-y-2">
+              <p><strong>Chrome/Edge:</strong> Click lock icon → Allow location</p>
+              <p><strong>Firefox:</strong> Click shield icon → Allow location</p>
+              <p><strong>Safari:</strong> Safari menu → Preferences → Websites → Location</p>
+              <p className="text-xs text-gray-500 mt-3">After enabling, click Refresh button</p>
+            </div>
+            <button
+              onClick={() => setShowHelpModal(false)}
+              className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Got It
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 export const MyTasks: React.FC = () => {
   const { user } = useAuth();
   const [, setTasks] = useState<EnhancedMiniJobCardResponse[]>([]);
@@ -61,12 +153,22 @@ export const MyTasks: React.FC = () => {
   const [showLocationAlert, setShowLocationAlert] = useState(false);
   const [locationError, setLocationError] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // New state for location requirement check
+  const [locationRequirementMet, setLocationRequirementMet] = useState(false);
+  const [initialLocationCheck, setInitialLocationCheck] = useState(true);
 
   useEffect(() => {
     if (user?.email) {
+      checkLocationRequirements();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user?.email && locationRequirementMet) {
       loadTasks();
     }
-  }, [user, filterDate]);
+  }, [user, filterDate, locationRequirementMet]);
 
   useEffect(() => {
     if (showUpdateModal && !currentLocation) {
@@ -80,7 +182,131 @@ export const MyTasks: React.FC = () => {
     }
   }, [currentLocation]);
 
-  // Location functions
+  // Check if location requirements are met
+  const checkLocationRequirements = async () => {
+    setInitialLocationCheck(true);
+    setLocationLoading(true);
+    
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser");
+      setLocationPermission("denied");
+      setLocationRequirementMet(false);
+      setLocationLoading(false);
+      setInitialLocationCheck(false);
+      return;
+    }
+
+    try {
+      // Check permission status first
+      if (navigator.permissions) {
+        const permission = await navigator.permissions.query({
+          name: "geolocation",
+        });
+        
+        if (permission.state === "granted") {
+          // Try to get current position to verify device location is also enabled
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords;
+              setCurrentLocation({ lat: latitude, lon: longitude });
+              setLocationPermission("granted");
+              setLocationRequirementMet(true);
+              setLocationLoading(false);
+              setInitialLocationCheck(false);
+              setLocationError("");
+            },
+            (error) => {
+              handleLocationError(error);
+              setLocationRequirementMet(false);
+              setLocationLoading(false);
+              setInitialLocationCheck(false);
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 300000,
+            }
+          );
+        } else {
+          setLocationPermission(permission.state as "granted" | "denied" | "prompt");
+          setLocationRequirementMet(false);
+          setLocationLoading(false);
+          setInitialLocationCheck(false);
+          setLocationError("Location permission is required to access this page");
+        }
+      } else {
+        // Fallback for browsers without permissions API
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setCurrentLocation({ lat: latitude, lon: longitude });
+            setLocationPermission("granted");
+            setLocationRequirementMet(true);
+            setLocationLoading(false);
+            setInitialLocationCheck(false);
+            setLocationError("");
+          },
+          (error) => {
+            handleLocationError(error);
+            setLocationRequirementMet(false);
+            setLocationLoading(false);
+            setInitialLocationCheck(false);
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Error checking location requirements:", error);
+      setLocationError("Unable to check location requirements");
+      setLocationRequirementMet(false);
+      setLocationLoading(false);
+      setInitialLocationCheck(false);
+    }
+  };
+
+  const handleLocationError = (error: GeolocationPositionError) => {
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        setLocationPermission("denied");
+        setLocationError(
+          "Location access denied. Please enable location services in your browser and device settings."
+        );
+        break;
+      case error.POSITION_UNAVAILABLE:
+        setLocationError(
+          "Location information unavailable. Please ensure your device location is enabled."
+        );
+        break;
+      case error.TIMEOUT:
+        setLocationError("Location request timed out. Please try again.");
+        break;
+      default:
+        setLocationError(
+          "An error occurred while retrieving location. Please check your location settings."
+        );
+        break;
+    }
+  };
+
+  // Quick enable location function
+  const handleQuickEnableLocation = async () => {
+    setLocationLoading(true);
+    setLocationError("");
+    
+    const success = await requestLocationPermission();
+    if (success) {
+      setLocationRequirementMet(true);
+    }
+    setLocationLoading(false);
+  };
+
+  // Refresh location check without full page reload
+  const handleRefresh = () => {
+    setLocationRequirementMet(false);
+    setLocationError("");
+    checkLocationRequirements();
+  };
+
+  // Location functions (existing)
   const getCurrentLocation = async () => {
     setLocationLoading(true);
     if (!navigator.geolocation) {
@@ -128,45 +354,7 @@ export const MyTasks: React.FC = () => {
     }
   };
 
-  const checkLocationPermission = async () => {
-    if (!navigator.geolocation) {
-      setLocationPermission("denied");
-      setLocationError("Geolocation is not supported by this browser");
-      return;
-    }
 
-    try {
-      if (navigator.permissions) {
-        const permission = await navigator.permissions.query({
-          name: "geolocation",
-        });
-        setLocationPermission(
-          permission.state as "granted" | "denied" | "prompt"
-        );
-
-        permission.onchange = () => {
-          setLocationPermission(
-            permission.state as "granted" | "denied" | "prompt"
-          );
-        };
-      } else {
-        navigator.geolocation.getCurrentPosition(
-          () => setLocationPermission("granted"),
-          (error) => {
-            if (error.code === error.PERMISSION_DENIED) {
-              setLocationPermission("denied");
-            } else {
-              setLocationPermission("prompt");
-            }
-          }
-        );
-      }
-    } catch (error) {
-      console.error("Error checking location permission:", error);
-      setLocationPermission("denied");
-      setLocationError("Unable to check location permission");
-    }
-  };
 
   const requestLocationPermission = async () => {
     setLocationLoading(true);
@@ -191,27 +379,7 @@ export const MyTasks: React.FC = () => {
         },
         (error) => {
           setLocationLoading(false);
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              setLocationPermission("denied");
-              setLocationError(
-                "Location access denied. Please enable location in browser settings."
-              );
-              break;
-            case error.POSITION_UNAVAILABLE:
-              setLocationError(
-                "Location information unavailable. Please try again."
-              );
-              break;
-            case error.TIMEOUT:
-              setLocationError("Location request timed out. Please try again.");
-              break;
-            default:
-              setLocationError(
-                "An unknown error occurred while retrieving location."
-              );
-              break;
-          }
+          handleLocationError(error);
           resolve(false);
         },
         {
@@ -223,14 +391,7 @@ export const MyTasks: React.FC = () => {
     });
   };
 
-  // Initialize location permission check
-  useEffect(() => {
-    if (user?.email) {
-      checkLocationPermission();
-    }
-  }, [user]);
-
-  // Task management functions
+  // Task management functions (existing)
   const loadTasks = async () => {
     if (!user?.email) return;
 
@@ -327,7 +488,7 @@ export const MyTasks: React.FC = () => {
     }
   };
 
-  // Filter functions
+  // Filter functions (existing)
   const clearFilters = () => {
     setFilterDate("");
   };
@@ -360,6 +521,31 @@ export const MyTasks: React.FC = () => {
     setShowLocationAlert,
   };
 
+  // Show location requirement guard if conditions not met
+  if (initialLocationCheck || (!locationRequirementMet && !locationLoading && locationPermission !== "checking")) {
+    return (
+      <LocationRequirementGuard
+        onEnableLocation={handleQuickEnableLocation}
+        onRefresh={handleRefresh}
+        locationLoading={locationLoading}
+        locationError={locationError}
+      />
+    );
+  }
+
+  // Show loading while checking initial location
+  if (locationPermission === "checking" || initialLocationCheck) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking location requirements...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Main component render (existing)
   return (
     <div className="space-y-6">
       {/* Location Management Component */}
@@ -404,7 +590,7 @@ export const MyTasks: React.FC = () => {
             >
               Show all tasks
             </button>
-          )}
+            )}
         </div>
       )}
     </div>
