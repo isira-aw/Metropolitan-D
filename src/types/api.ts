@@ -47,6 +47,7 @@ export interface VerifyTokenResponse {
 
 // Employee Types
 export interface EmployeeResponse {
+  password: string | undefined;
   email: string;
   name: string;
   contactNumber: string;
@@ -160,8 +161,8 @@ export interface HealthResponse {
 // Report request interface
 export interface ReportRequest {
   email: string;
-  startDate: string; // Format: YYYY-MM-DD
-  endDate: string;   // Format: YYYY-MM-DD
+  startDate: string;
+  endDate: string;
 }
 
 // Daily report data interface

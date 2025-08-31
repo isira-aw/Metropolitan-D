@@ -69,6 +69,7 @@ export const Employees: React.FC = () => {
       name: employee.name,
       contactNumber: employee.contactNumber,
       role: employee.role,
+      password: employee.password,
     });
     setShowEditModal(true);
   };
