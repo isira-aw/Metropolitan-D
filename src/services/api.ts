@@ -391,12 +391,12 @@ async getMiniJobCardsByEmployeeAndDate(email: string, date: string): Promise<Api
   return this.handleResponse<MiniJobCardResponse[]>(response);
 }
 
-async getMiniJobCardsByEmployee(email: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
-  const response = await fetch(`${BASE_URL}/minijobcards/employee/${encodeURIComponent(email)}`, {
-    headers: this.getAuthHeaders() 
-  });
-  return this.handleResponse<MiniJobCardResponse[]>(response);
-}
+// async getMiniJobCardsByEmployee(email: string): Promise<ApiResponse<MiniJobCardResponse[]>> {
+//   const response = await fetch(`${BASE_URL}/minijobcards/employee/${encodeURIComponent(email)}`, {
+//     headers: this.getAuthHeaders() 
+//   });
+//   return this.handleResponse<MiniJobCardResponse[]>(response);
+// }
 
 // Add this method to your apiService.ts file
 async sendJobCardEmail(emailData: SendJobCardEmailRequest): Promise<ApiResponse<EmailResponse>> {

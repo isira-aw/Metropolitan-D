@@ -20,6 +20,7 @@ interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
   generatorContactNumber?: string;
   generatorEmail?: string;
   generatorDescription?: string;
+  orderPosition?: number; // Added for ordering
 }
 
 // Location context type
@@ -166,6 +167,16 @@ export const MyTasks: React.FC = () => {
 
   useEffect(() => {
     if (user?.email && locationRequirementMet) {
+      // Initialize with today's date
+      const today = format(new Date(), "yyyy-MM-dd", {
+        timeZone: "Asia/Colombo",
+      });
+      setFilterDate(today);
+    }
+  }, [user, locationRequirementMet]);
+
+  useEffect(() => {
+    if (user?.email && locationRequirementMet && filterDate) {
       loadTasks();
     }
   }, [user, filterDate, locationRequirementMet]);
@@ -354,8 +365,6 @@ export const MyTasks: React.FC = () => {
     }
   };
 
-
-
   const requestLocationPermission = async () => {
     setLocationLoading(true);
     setLocationError("");
@@ -391,39 +400,48 @@ export const MyTasks: React.FC = () => {
     });
   };
 
-  // Task management functions (existing)
+  // Function to convert time string to minutes for sorting
+  const timeToMinutes = (timeString: string): number => {
+    if (!timeString) return 0;
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Function to get ordinal suffix
+  const getOrdinalSuffix = (position: number): string => {
+    const j = position % 10;
+    const k = position % 100;
+    if (j === 1 && k !== 11) return `${position}st`;
+    if (j === 2 && k !== 12) return `${position}nd`;
+    if (j === 3 && k !== 13) return `${position}rd`;
+    return `${position}th`;
+  };
+
+  // Task management functions
   const loadTasks = async () => {
-    if (!user?.email) return;
+    if (!user?.email || !filterDate) return;
 
     try {
       setLoading(true);
-      let response;
-
-      if (filterDate) {
-        console.log(`Loading tasks for date: ${filterDate}`);
-        response = await apiService.getMiniJobCardsByEmployeeAndDate(
-          user.email,
-          filterDate
-        );
-      } else {
-        console.log("Loading all tasks");
-        response = await apiService.getMiniJobCardsByEmployee(user.email);
-      }
+      console.log(`Loading tasks for date: ${filterDate}`);
+      
+      const response = await apiService.getMiniJobCardsByEmployeeAndDate(
+        user.email,
+        filterDate
+      );
 
       if (response.status && response.data) {
-        const sortedTasks = response.data.sort((a, b) => {
-          const today = new Date().toISOString().split("T")[0];
-          const aDate = a.date;
-          const bDate = b.date;
-
-          const aIsToday = aDate === today;
-          const bIsToday = bDate === today;
-
-          if (aIsToday && !bIsToday) return -1;
-          if (!aIsToday && bIsToday) return 1;
-
-          return new Date(bDate).getTime() - new Date(aDate).getTime();
-        });
+        // Sort tasks by estimatedTime and add order position
+        const sortedTasks = response.data
+          .sort((a, b) => {
+            const aTime = timeToMinutes(a.estimatedTime || "00:00");
+            const bTime = timeToMinutes(b.estimatedTime || "00:00");
+            return aTime - bTime;
+          })
+          .map((task, index) => ({
+            ...task,
+            orderPosition: index + 1
+          }));
 
         setTasks(sortedTasks);
         setFilteredTasks(sortedTasks);
@@ -438,6 +456,20 @@ export const MyTasks: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get available status options (exclude current status)
+  const getAvailableStatusOptions = (currentStatus: string) => {
+    const allOptions = [
+      { value: "PENDING", label: "Pending" },
+      { value: "ASSIGNED", label: "Assigned" },
+      { value: "IN_PROGRESS", label: "In Progress" },
+      { value: "ON_HOLD", label: "On Hold" },
+      { value: "COMPLETED", label: "Completed" },
+      { value: "CANCELLED", label: "Cancelled" }
+    ];
+    
+    return allOptions.filter(option => option.value !== currentStatus);
   };
 
   const handleUpdateTask = (task: EnhancedMiniJobCardResponse) => {
@@ -488,11 +520,7 @@ export const MyTasks: React.FC = () => {
     }
   };
 
-  // Filter functions (existing)
-  const clearFilters = () => {
-    setFilterDate("");
-  };
-
+  // Set today's date
   const setTodayFilter = () => {
     const today = format(new Date(), "yyyy-MM-dd", {
       timeZone: "Asia/Colombo",
@@ -545,7 +573,7 @@ export const MyTasks: React.FC = () => {
     );
   }
 
-  // Main component render (existing)
+  // Main component render
   return (
     <div className="space-y-6">
       {/* Location Management Component */}
@@ -553,14 +581,13 @@ export const MyTasks: React.FC = () => {
       
       <h1 className="text-2xl font-bold ml-5">My Tasks</h1>
 
-      {/* Tasks Display Component (includes filters, grid, and modal) */}
+      {/* Tasks Display Component */}
       <TasksDisplay
         tasks={filteredTasks}
         loading={loading}
         filterDate={filterDate}
         setFilterDate={setFilterDate}
         setTodayFilter={setTodayFilter}
-        clearFilters={clearFilters}
         formatDate={formatDate}
         showUpdateModal={showUpdateModal}
         setShowUpdateModal={setShowUpdateModal}
@@ -572,6 +599,8 @@ export const MyTasks: React.FC = () => {
         onUpdateTask={handleUpdateTask}
         onSaveUpdate={handleSaveUpdate}
         isUpdating={isUpdating}
+        getAvailableStatusOptions={getAvailableStatusOptions}
+        getOrdinalSuffix={getOrdinalSuffix}
       />
 
       {/* No tasks message */}
@@ -579,18 +608,14 @@ export const MyTasks: React.FC = () => {
         <div className="text-center py-12">
           <Zap className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">
-            {filterDate
-              ? `No tasks found for ${formatDate(filterDate)}`
-              : "No tasks assigned to you"}
+            No tasks found for {formatDate(filterDate)}
           </p>
-          {filterDate && (
-            <button
-              onClick={clearFilters}
-              className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              Show all tasks
-            </button>
-            )}
+          <button
+            onClick={setTodayFilter}
+            className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            Load today's tasks
+          </button>
         </div>
       )}
     </div>

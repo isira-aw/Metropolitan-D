@@ -1,18 +1,18 @@
 // components/MyTasks/TasksDisplay.tsx
-import React, { useEffect } from "react";
+import React from "react";
 import { format } from "date-fns-tz";
 import {
   Clock,
   MapPin,
   Calendar,
   Navigation,
-  X,
   Zap,
   Phone,
   Mail,
   FileText,
   Settings,
   Timer,
+  Award,
 } from "lucide-react";
 import {
   MiniJobCardResponse,
@@ -32,6 +32,7 @@ interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
   generatorContactNumber?: string;
   generatorEmail?: string;
   generatorDescription?: string;
+  orderPosition?: number;
 }
 
 // Location context type
@@ -58,7 +59,6 @@ interface TasksDisplayProps {
   filterDate: string;
   setFilterDate: (date: string) => void;
   setTodayFilter: () => void;
-  clearFilters: () => void;
   formatDate: (dateString: string) => string;
   showUpdateModal: boolean;
   setShowUpdateModal: (show: boolean) => void;
@@ -70,6 +70,8 @@ interface TasksDisplayProps {
   onUpdateTask: (task: EnhancedMiniJobCardResponse) => void;
   onSaveUpdate: () => Promise<void>;
   isUpdating: boolean;
+  getAvailableStatusOptions: (currentStatus: string) => { value: string; label: string; }[];
+  getOrdinalSuffix: (position: number) => string;
 }
 
 export const TasksDisplay: React.FC<TasksDisplayProps> = ({
@@ -78,7 +80,6 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
   filterDate,
   setFilterDate,
   setTodayFilter,
-  clearFilters,
   formatDate,
   showUpdateModal,
   setShowUpdateModal,
@@ -90,6 +91,8 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
   onUpdateTask,
   onSaveUpdate,
   isUpdating,
+  getAvailableStatusOptions,
+  getOrdinalSuffix,
 }) => {
   const {
     currentLocation,
@@ -98,13 +101,6 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
     locationPermission,
     getCurrentLocation,
   } = locationContext;
-
-  // Auto-set today's filter on component mount
-  useEffect(() => {
-    if (!filterDate) {
-      setTodayFilter();
-    }
-  }, []);
 
   const formatTime = (timeString: string) => {
     if (!timeString) return "No time set";
@@ -136,80 +132,71 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
     }
   };
 
+  const getOrderBadgeColor = (position: number) => {
+    switch (position) {
+      case 1:
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case 2:
+        return "bg-slate-100 text-slate-800 border-slate-300";
+      case 3:
+        return "bg-orange-100 text-orange-800 border-orange-300";
+      default:
+        return "bg-blue-100 text-blue-800 border-blue-300";
+    }
+  };
+
   const handleClick = async () => {
     await onSaveUpdate();
   };
 
   return (
     <>
-      {/* Compact Date Filter */}
+      {/* Simple Date Filter - Only Date Picker and Today Button */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap">
           {/* Date Input */}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-slate-700 whitespace-nowrap">
-              Date:
+              Select Date:
             </label>
             <div className="relative">
               <input
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              {filterDate && (
-                <button
-                  onClick={() => setFilterDate("")}
-                  className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
             </div>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={setTodayFilter}
-              className="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-            >
-              Today
-            </button>
-            <button
-              onClick={clearFilters}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-            >
-              All Tasks
-            </button>
-          </div>
-
-          {/* Active Filter Display */}
-          {filterDate && (
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                {formatDate(filterDate)}
-                <button
-                  onClick={() => setFilterDate("")}
-                  className="ml-1 text-green-600 hover:text-green-800"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            </div>
-          )}
+          {/* Today Button */}
+          <button
+            onClick={setTodayFilter}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            Today
+          </button>
 
           {/* Loading indicator */}
           {loading && (
             <div className="flex items-center gap-2 ml-auto">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span className="text-xs text-slate-600">Loading...</span>
+              <span className="text-xs text-slate-600">Loading tasks...</span>
+            </div>
+          )}
+
+          {/* Selected Date Display */}
+          {filterDate && (
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-sm text-slate-600">
+                Showing tasks for: <strong>{formatDate(filterDate)}</strong>
+              </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Enhanced Tasks Grid */}
+      {/* Enhanced Tasks Grid with Order Display */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {tasks.map((task) => (
           <div
@@ -220,9 +207,17 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                 : "border-slate-200"
             }`}
           >
-            <div className="flex justify-end mb-2">
+            {/* Order Badge and Status */}
+            <div className="flex justify-between items-start mb-4">
+              {task.orderPosition && (
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold border ${getOrderBadgeColor(task.orderPosition)}`}>
+                  <Award className="w-4 h-4 mr-1" />
+                  {getOrdinalSuffix(task.orderPosition)} Priority
+                </div>
+              )}
               <StatusBadge status={task.status} />
             </div>
+
             {/* Task Header with Generator Info */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start space-x-3">
@@ -356,41 +351,39 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
               </div>
             )}
 
-            {/* Action Button - Only for Today's Tasks */}
-            {isToday(task.date) && (
-              <div className="mb-4">
-                <button
-                  onClick={() => onUpdateTask(task)}
-                  disabled={locationPermission === "denied" || locationLoading}
-                  className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                    locationPermission === "denied"
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : locationLoading
-                      ? "bg-blue-400 text-white cursor-wait"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                >
-                  {locationLoading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Getting Location...</span>
-                    </div>
-                  ) : locationPermission === "denied" ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>Location Required</span>
-                    </div>
-                  ) : (
-                    "Update Task"
-                  )}
-                </button>
-                {locationPermission === "denied" && (
-                  <p className="text-xs text-red-600 mt-1 text-center">
-                    Enable location access to update tasks
-                  </p>
+            {/* Action Button - Show for all tasks with proper status filtering */}
+            <div className="mb-4">
+              <button
+                onClick={() => onUpdateTask(task)}
+                disabled={locationPermission === "denied" || locationLoading}
+                className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                  locationPermission === "denied"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : locationLoading
+                    ? "bg-blue-400 text-white cursor-wait"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                {locationLoading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Getting Location...</span>
+                  </div>
+                ) : locationPermission === "denied" ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>Location Required</span>
+                  </div>
+                ) : (
+                  "Update Task"
                 )}
-              </div>
-            )}
+              </button>
+              {locationPermission === "denied" && (
+                <p className="text-xs text-red-600 mt-1 text-center">
+                  Enable location access to update tasks
+                </p>
+              )}
+            </div>
 
             {/* Task Footer */}
             <div className="pt-4 border-t border-slate-200">
@@ -408,7 +401,7 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
         ))}
       </div>
 
-      {/* Enhanced Update Task Modal */}
+      {/* Enhanced Update Task Modal with Status Filtering */}
       <Modal
         isOpen={showUpdateModal}
         onClose={() => {
@@ -462,37 +455,27 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
             )}
           </div>
           
-          {/* Estimated Time */}
+          {/* Estimated Time - Show as read-only */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Estimated Duration
+              Estimated Duration (Read Only)
             </label>
             <div className="flex gap-2">
-              <select
-                value={updateForm.estimatedTime?.split(":")[0] || "Hour"}
-                disabled
-                className="flex-1 px-3 py-2 border border-red-500 bg-red-50 text-red-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              >
-                <option value="Hour">Hour</option>
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i.toString().padStart(2, "0")}>
-                    {i.toString().padStart(2, "0")} Hour
-                  </option>
-                ))}
-              </select>
-              <span className="flex items-center text-red-600 px-2">:</span>
-              <select
-                value={updateForm.estimatedTime?.split(":")[1] || "Min"}
-                disabled
-                className="flex-1 px-3 py-2 border border-red-500 bg-red-50 text-red-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              >
-                <option value="Min">Min</option>
-                {Array.from({ length: 60 }, (_, i) => (
-                  <option key={i} value={i.toString().padStart(2, "0")}>
-                    {i.toString().padStart(2, "0")} Min
-                  </option>
-                ))}
-              </select>
+              <input
+                type="text"
+                value={updateForm.estimatedTime?.split(":")[0] || "0"}
+                readOnly
+                className="flex-1 px-3 py-2 border border-slate-300 bg-slate-50 text-slate-600 rounded-lg cursor-not-allowed"
+                placeholder="Hours"
+              />
+              <span className="flex items-center text-slate-500 px-2">:</span>
+              <input
+                type="text"
+                value={updateForm.estimatedTime?.split(":")[1] || "0"}
+                readOnly
+                className="flex-1 px-3 py-2 border border-slate-300 bg-slate-50 text-slate-600 rounded-lg cursor-not-allowed"
+                placeholder="Minutes"
+              />
             </div>
           </div>
 
@@ -500,16 +483,13 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Date
+                Date (Read Only)
               </label>
               <input
                 type="date"
                 readOnly
                 value={updateForm.date || ""}
-                onChange={(e) =>
-                  setUpdateForm((prev) => ({ ...prev, date: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-slate-300 bg-slate-50 text-slate-600 rounded-lg cursor-not-allowed"
               />
             </div>
             <div>
@@ -560,10 +540,13 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
             </div>
           </div>
 
-          {/* Status */}
+          {/* Status - Filtered to exclude current status */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Status
+              Update Status
+              <span className="text-xs text-slate-500 ml-1">
+                (Current: {updatingTask?.status})
+              </span>
             </label>
             <select
               value={updateForm.status || ""}
@@ -575,12 +558,12 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
               }
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="PENDING">Pending</option>
-              <option value="ASSIGNED">Assigned</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="ON_HOLD">On Hold</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="">Select new status...</option>
+              {updatingTask && getAvailableStatusOptions(updatingTask.status).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
