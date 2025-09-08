@@ -13,6 +13,7 @@ import {
   ChevronDown,
   X,
   Eye,
+  MapPin,
 } from "lucide-react";
 import {
   JobCardResponse,
@@ -216,7 +217,7 @@ interface JobCardsDisplayProps {
   openDeleteModal: (job: JobCardResponse) => void;
   formatDate: (dateString: string) => string;
   filterDate: string;
-  filterType: "ALL" | "SERVICE" | "REPAIR";
+  filterType: "ALL" | "SERVICE" | "REPAIR" | "VISIT";
   clearAllFilters: () => Promise<void>;
   showCreateModal: boolean;
   setShowCreateModal: (show: boolean) => void;
@@ -226,8 +227,8 @@ interface JobCardsDisplayProps {
   setJobToDelete: (job: JobCardResponse | null) => void;
   deleting: boolean;
   handleDeleteJob: () => Promise<void>;
-  jobType: "SERVICE" | "REPAIR";
-  setJobType: (type: "SERVICE" | "REPAIR") => void;
+  jobType: "SERVICE" | "REPAIR" | "VISIT";
+  setJobType: (type: "SERVICE" | "REPAIR" | "VISIT") => void;
   formData: CreateJobCardRequest;
   setFormData: React.Dispatch<React.SetStateAction<CreateJobCardRequest>>;
   generators: GeneratorResponse[];
@@ -290,148 +291,180 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
     setSelectedJobCard(null);
   };
 
+  // Helper function to get job type styling
+  const getJobTypeStyle = (jobType: string) => {
+    switch (jobType) {
+      case "SERVICE":
+        return {
+          background: "bg-green-100",
+          text: "text-green-800",
+          iconBg: "bg-green-100",
+          iconColor: "text-green-600",
+        };
+      case "REPAIR":
+        return {
+          background: "bg-orange-100",
+          text: "text-orange-800",
+          iconBg: "bg-orange-100",
+          iconColor: "text-orange-600",
+        };
+      case "VISIT":
+        return {
+          background: "bg-purple-100",
+          text: "text-purple-800",
+          iconBg: "bg-purple-100",
+          iconColor: "text-purple-600",
+        };
+      default:
+        return {
+          background: "bg-gray-100",
+          text: "text-gray-800",
+          iconBg: "bg-gray-100",
+          iconColor: "text-gray-600",
+        };
+    }
+  };
+
+  // Helper function to get job type icon
+  const getJobTypeIcon = (jobType: string) => {
+    switch (jobType) {
+      case "SERVICE":
+        return <Settings className="w-6 h-6" />;
+      case "REPAIR":
+        return <Wrench className="w-6 h-6" />;
+      case "VISIT":
+        return <MapPin className="w-6 h-6" />;
+      default:
+        return <Settings className="w-6 h-6" />;
+    }
+  };
+
   return (
     <>
       {/* Job Cards Grid */}
       {!dateFilterLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredJobCards.map((job) => (
-            <div
-              key={job.jobCardId}
-              className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative"
-            >
-              {/* Actions Dropdown */}
-              <div className="absolute top-4 right-4">
-                <div className="relative">
-                  <div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDropdown(
-                          showDropdown === job.jobCardId ? null : job.jobCardId
-                        );
-                      }}
-                      className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-                      aria-label="More actions"
-                    >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => openDetailView(job)}
-                      className=" px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {showDropdown === job.jobCardId && (
-                    <div
-                      className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+          {filteredJobCards.map((job) => {
+            const typeStyle = getJobTypeStyle(job.jobType);
+            return (
+              <div
+                key={job.jobCardId}
+                className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative"
+              >
+                {/* Actions Dropdown */}
+                <div className="absolute top-4 right-4">
+                  <div className="relative">
+                    <div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDropdown(
+                            showDropdown === job.jobCardId ? null : job.jobCardId
+                          );
+                        }}
+                        className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                        aria-label="More actions"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
                       <button
                         onClick={() => openDetailView(job)}
-                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors"
+                        className=" px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors"
                       >
                         <Eye className="w-4 h-4" />
-                        <span>View Details</span>
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(job)}
-                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Delete Job Card</span>
                       </button>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-start justify-between mb-4 pr-8">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      job.jobType === "SERVICE"
-                        ? "bg-green-100"
-                        : "bg-orange-100"
-                    }`}
-                  >
-                    {job.jobType === "SERVICE" ? (
-                      <Settings
-                        className={`w-6 h-6 ${
-                          job.jobType === "SERVICE"
-                            ? "text-green-600"
-                            : "text-orange-600"
-                        }`}
-                      />
-                    ) : (
-                      <Wrench className="w-6 h-6 text-orange-600" />
+                    {showDropdown === job.jobCardId && (
+                      <div
+                        className="absolute right-0 top-8 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => openDetailView(job)}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>View Details</span>
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(job)}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete Job Card</span>
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900">
-                      {job.generator.name}
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      {job.generator.capacity} KW
-                    </p>
-                  </div>
-                  <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    job.jobType === "SERVICE"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-orange-100 text-orange-800"
-                  }`}
-                >
-                  {job.jobType}
-                </span>
                 </div>
-                
-              </div>
 
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center space-x-2 text-sm text-slate-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>{formatDate(job.date)}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-slate-600">
-                  <Clock className="w-4 h-4" />
-                  <span>{formatTime(job.estimatedTime)}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-slate-600">
-                  <Users className="w-4 h-4" />
-                  <span>{job.assignedEmployees.length} employees assigned</span>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-200 pt-4">
-                <p className="text-sm font-medium text-slate-700 mb-2">
-                  Assigned Employees:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {job.assignedEmployees.map((employee) => (
+                <div className="flex items-start justify-between mb-4 pr-8">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${typeStyle.iconBg}`}>
+                      <div className={typeStyle.iconColor}>
+                        {getJobTypeIcon(job.jobType)}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">
+                        {job.generator.name}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        {job.generator.capacity} KW
+                      </p>
+                    </div>
                     <span
-                      key={employee.email}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeStyle.background} ${typeStyle.text}`}
                     >
-                      {employee.name}
+                      {job.jobType}
                     </span>
-                  ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center space-x-2 text-sm text-slate-600">
+                    <Calendar className="w-4 h-4" />
+                    <span>{formatDate(job.date)}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-slate-600">
+                    <Clock className="w-4 h-4" />
+                    <span>{formatTime(job.estimatedTime)}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-slate-600">
+                    <Users className="w-4 h-4" />
+                    <span>{job.assignedEmployees.length} employees assigned</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 pt-4">
+                  <p className="text-sm font-medium text-slate-700 mb-2">
+                    Assigned Employees:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {job.assignedEmployees.map((employee) => (
+                      <span
+                        key={employee.email}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {employee.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <p className="text-xs text-slate-500">
+                    Created {formatDate(job.createdAt)}
+                    {job.updatedAt !== job.createdAt && (
+                      <span className="block">
+                        Updated {formatDate(job.updatedAt)}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <p className="text-xs text-slate-500">
-                  Created {formatDate(job.createdAt)}
-                  {job.updatedAt !== job.createdAt && (
-                    <span className="block">
-                      Updated {formatDate(job.updatedAt)}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -562,6 +595,17 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
               >
                 <Wrench className="w-5 h-5" />
                 <span>Repair</span>
+              </button>
+              <button
+                onClick={() => setJobType("VISIT")}
+                className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                  jobType === "VISIT"
+                    ? "border-purple-500 bg-purple-50 text-purple-700"
+                    : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <MapPin className="w-5 h-5" />
+                <span>Visit</span>
               </button>
             </div>
           </div>

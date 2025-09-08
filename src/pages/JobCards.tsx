@@ -17,13 +17,15 @@ export const JobCards: React.FC = () => {
   const [generators, setGenerators] = useState<GeneratorResponse[]>([]);
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR">("ALL");
+  // Updated to include VISIT type
+  const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR" | "VISIT">("ALL");
   const [filterDate, setFilterDate] = useState<string>("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<JobCardResponse | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [jobType, setJobType] = useState<"SERVICE" | "REPAIR">("SERVICE");
+  // Updated to include VISIT type
+  const [jobType, setJobType] = useState<"SERVICE" | "REPAIR" | "VISIT">("SERVICE");
   const [formData, setFormData] = useState<CreateJobCardRequest>({
     generatorId: "",
     date: "",
@@ -142,10 +144,21 @@ export const JobCards: React.FC = () => {
 
   const handleCreateJob = async () => {
     try {
-      const response =
-        jobType === "SERVICE"
-          ? await apiService.createServiceJob(formData)
-          : await apiService.createRepairJob(formData);
+      let response;
+      // Updated to handle VISIT job type
+      switch (jobType) {
+        case "SERVICE":
+          response = await apiService.createServiceJob(formData);
+          break;
+        case "REPAIR":
+          response = await apiService.createRepairJob(formData);
+          break;
+        case "VISIT":
+          response = await apiService.createVisitJob(formData);
+          break;
+        default:
+          throw new Error(`Unknown job type: ${jobType}`);
+      }
 
       if (response.status) {
         // Refresh based on current filters

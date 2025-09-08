@@ -418,6 +418,53 @@ async getJobCardEmails(jobCardId: string): Promise<ApiResponse<EmailResponse[]>>
   });
   return this.handleResponse<EmailResponse[]>(response);
 }
+// Create Visit Job
+  async createVisitJob(data: CreateJobCardRequest): Promise<ApiResponse<JobCardResponse>> {
+    try {
+      const response = await fetch(`${BASE_URL}/jobcards/visit`, {
+        method: 'POST',
+          headers: {
+      ...this.getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating visit job:', error);
+      throw error;
+    }
+  }
+
+  // If you have separate endpoints, you might also need to update the generic job creation method
+  async createJobCard(jobType: 'SERVICE' | 'REPAIR' | 'VISIT', data: CreateJobCardRequest): Promise<ApiResponse<JobCardResponse>> {
+    const endpoint = jobType.toLowerCase(); // 'service', 'repair', or 'visit'
+    
+    try {
+      const response = await fetch(`${BASE_URL}/jobcards/${endpoint}`, {
+        method: 'POST',
+           headers: {
+      ...this.getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error creating ${jobType} job:`, error);
+      throw error;
+    }
+  }
 
 }
 
