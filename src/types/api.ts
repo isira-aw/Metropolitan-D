@@ -82,12 +82,12 @@ export interface CreateGeneratorRequest {
   description: string;
 }
 
-// Job Card Types
+// Job Card Types - Updated to include VISIT
 export interface JobCardResponse {
   jobCardId: string;
   jobId: string;
   generator: GeneratorResponse;
-  jobType: 'SERVICE' | 'REPAIR';
+  jobType: 'SERVICE' | 'REPAIR' | 'VISIT';
   date: string;
   estimatedTime: string;
   employeeEmails: string[];
@@ -207,14 +207,14 @@ export interface PaginatedResponse<T> {
   hasPrevious: boolean;
 }
 
-// Filter types
+// Filter types - Updated to include VISIT
 export interface EmployeeFilter {
   role?: 'ADMIN' | 'EMPLOYEE';
   search?: string;
 }
 
 export interface JobCardFilter {
-  jobType?: 'SERVICE' | 'REPAIR';
+  jobType?: 'SERVICE' | 'REPAIR' | 'VISIT';
   dateFrom?: string;
   dateTo?: string;
   generatorId?: string;
