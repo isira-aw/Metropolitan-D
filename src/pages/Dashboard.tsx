@@ -90,8 +90,8 @@ export const Dashboard: React.FC = () => {
           setStats(prev => ({
             ...prev,
             totalTasks: tasks.length,
-            pendingTasks: tasks.filter(t => t.status === 'PENDING' || t.status === 'ASSIGNED').length,
-            completedTasks: tasks.filter(t => t.status === 'COMPLETED').length
+            pendingTasks: tasks.filter((t: { status: string; }) => t.status === 'PENDING' || t.status === 'ASSIGNED').length,
+            completedTasks: tasks.filter((t: { status: string; }) => t.status === 'COMPLETED').length
           }));
           setRecentTasks(tasks.slice(0, 5));
         }
@@ -259,7 +259,7 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-slate-900 ml-4">Dashboard</h1>
       </div>
 
       {/* Stats Cards */}

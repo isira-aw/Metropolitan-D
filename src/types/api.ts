@@ -138,6 +138,7 @@ export interface CreateMiniJobCardRequest {
 
 // Activity Log Types
 export interface LogResponse {
+  generatorName: string;
   logId: string;
   employeeEmail: string;
   employeeName: string;

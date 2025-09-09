@@ -70,7 +70,9 @@ interface TasksDisplayProps {
   onUpdateTask: (task: EnhancedMiniJobCardResponse) => void;
   onSaveUpdate: () => Promise<void>;
   isUpdating: boolean;
-  getAvailableStatusOptions: (currentStatus: string) => { value: string; label: string; }[];
+  getAvailableStatusOptions: (
+    currentStatus: string
+  ) => { value: string; label: string }[];
   getOrdinalSuffix: (position: number) => string;
 }
 
@@ -210,7 +212,11 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
             {/* Order Badge and Status */}
             <div className="flex justify-between items-start mb-4">
               {task.orderPosition && (
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold border ${getOrderBadgeColor(task.orderPosition)}`}>
+                <div
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold border ${getOrderBadgeColor(
+                    task.orderPosition
+                  )}`}
+                >
                   <Award className="w-4 h-4 mr-1" />
                   {getOrdinalSuffix(task.orderPosition)} Priority
                 </div>
@@ -260,12 +266,31 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                 <Timer className="w-4 h-4" />
                 <span>
                   <span className="font-medium text-red-600">
-                    Est. Duration:
-                  </span>{" "}
+                    Estimated Time:
+                    {/* </span>{" "}
                   {task.estimatedTime
                     ? `${task.estimatedTime.split(":")[0]} H ${
                         task.estimatedTime.split(":")[1]
                       } min`
+                    : "No time set"}
+                </span> */}
+                  </span>{" "}
+                  {task.estimatedTime
+                    ? (() => {
+                        const [hoursStr, minutesStr] =
+                          task.estimatedTime.split(":");
+                        let hours = parseInt(hoursStr, 10) || 0;
+                        const minutes = minutesStr.padStart(2, "0");
+
+                        // Convert to 12-hour format
+                        const period = hours >= 12 ? "PM" : "AM";
+                        hours = hours % 12 || 12; // 0 → 12
+
+                        // Clamp to max 12h if you want
+                        if (hours > 12) hours = 12;
+
+                        return `${hours}:${minutes} ${period}`;
+                      })()
                     : "No time set"}
                 </span>
               </div>
@@ -454,36 +479,65 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
               </button>
             )}
           </div>
-          
+
           {/* Estimated Time - Show as read-only */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Estimated Duration (Read Only)
+          {/* <div>
+            <label className="block text-sm font-medium text-red-700 mb-2">
+              Estimated Time To Do this Task
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
-                value={updateForm.estimatedTime?.split(":")[0] || "0"}
+                value={(updateForm.estimatedTime?.split(":")[0] || "0") + " hrs"}
                 readOnly
                 className="flex-1 px-3 py-2 border border-slate-300 bg-slate-50 text-slate-600 rounded-lg cursor-not-allowed"
                 placeholder="Hours"
               />
+
               <span className="flex items-center text-slate-500 px-2">:</span>
               <input
                 type="text"
-                value={updateForm.estimatedTime?.split(":")[1] || "0"}
+                value={(updateForm.estimatedTime?.split(":")[1] || "0") + " min"}
                 readOnly
                 className="flex-1 px-3 py-2 border border-slate-300 bg-slate-50 text-slate-600 rounded-lg cursor-not-allowed"
                 placeholder="Minutes"
               />
             </div>
+          </div> */}
+          <div>
+            <label className="block text-sm font-medium text-red-700 mb-2">
+              Estimated Time To Do This Task
+            </label>
+            <input
+              type="text"
+              value={(() => {
+                const [hoursStr, minutesStr] = updateForm.estimatedTime?.split(
+                  ":"
+                ) || ["0", "0"];
+                let hours = parseInt(hoursStr, 10) || 0;
+                const minutes = minutesStr.padStart(2, "0");
+
+                // Convert to 12-hour format with AM/PM
+                const period = hours >= 12 ? "PM" : "AM";
+                hours = hours % 12 || 12; // 0 -> 12
+
+                // Ensure max 12 hours (if needed)
+                if (hours > 12) hours = 12;
+
+                return `${hours}:${minutes} ${period}`;
+              })()}
+              readOnly
+              className="w-full px-3 py-2 border border-slate-300 bg-slate-50 
+               text-red-600 rounded-lg cursor-not-allowed text-center font-medium"
+              placeholder="Estimated time"
+            />
           </div>
 
           {/* Task Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Date (Read Only)
+                Date
               </label>
               <input
                 type="date"
@@ -559,11 +613,12 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select new status...</option>
-              {updatingTask && getAvailableStatusOptions(updatingTask.status).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {updatingTask &&
+                getAvailableStatusOptions(updatingTask.status).map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
             </select>
           </div>
 

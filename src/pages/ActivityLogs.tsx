@@ -5,7 +5,7 @@ import {
   Copy,
   ExternalLink,
   ChevronDown,
-  ChevronUp,
+  ChevronUp
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
@@ -98,8 +98,40 @@ const SimpleMap: React.FC<{
   );
 };
 
-// Enhanced Activity Log Item Component
-const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
+// Location Button Component
+const LocationButton: React.FC<{
+  log: LogResponse;
+  onToggle: () => void;
+  isExpanded: boolean;
+}> = ({ log, onToggle, isExpanded }) => {
+  const hasLocation = log.location && log.location.includes(",");
+
+  if (!hasLocation) {
+    return (
+      <span className="text-xs text-slate-400 px-2 py-1 bg-slate-100 rounded">
+        No Location
+      </span>
+    );
+  }
+
+  return (
+    <button
+      onClick={onToggle}
+      className="flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-700 transition-colors px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded"
+    >
+      <MapPin className="w-3 h-3" />
+      <span>View</span>
+      {isExpanded ? (
+        <ChevronUp className="w-3 h-3" />
+      ) : (
+        <ChevronDown className="w-3 h-3" />
+      )}
+    </button>
+  );
+};
+
+// Table Row Component
+const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({ log, index }) => {
   const [showLocation, setShowLocation] = useState(false);
   const [locationAddress, setLocationAddress] = useState<string>("");
   const [loadingAddress, setLoadingAddress] = useState(false);
@@ -141,117 +173,92 @@ const ActivityLogItem: React.FC<{ log: LogResponse }> = ({ log }) => {
 
   const formatDateTime = (date: string, time: string) => {
     const dateTime = new Date(`${date}T${time}`);
-    return dateTime.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getActionIcon = (action: string) => {
-    if (action.includes("UPDATE")) return "✏️";
-    if (action.includes("CREATE")) return "➕";
-    if (action.includes("DELETE")) return "🗑️";
-    if (action.includes("LOGIN")) return "🔐";
-    return "📝";
-  };
-
-  const getActionColor = (action: string) => {
-    if (action.includes("UPDATE")) return "bg-blue-100 text-blue-600";
-    if (action.includes("CREATE")) return "bg-green-100 text-green-600";
-    if (action.includes("DELETE")) return "bg-red-100 text-red-600";
-    if (action.includes("LOGIN")) return "bg-purple-100 text-purple-600";
-    return "bg-slate-100 text-slate-600";
+    return {
+      date: dateTime.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      time: dateTime.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
   };
 
   const getStatusColor = (status: string) => {
-    if (status === "SUCCESS") return "bg-green-100 text-green-700";
-    if (status === "FAILED") return "bg-red-100 text-red-700";
-    return "bg-yellow-100 text-yellow-700";
+    if (status.includes("SUCCESS")) return "bg-green-100 text-green-700";
+    if (status.includes("FAILED")) return "bg-red-100 text-red-700";
+    if (status.includes("CANCELLED")) return "bg-red-100 text-red-700";
+    if (status.includes("ASSIGNED")) return "bg-blue-100 text-blue-700";
+    if (status.includes("ON_HOLD")) return "bg-yellow-100 text-yellow-700";
+    return "bg-slate-100 text-slate-700";
   };
 
+  const dateTime = formatDateTime(log.date, log.time);
+
   return (
-    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:shadow-md transition-shadow">
-      <div className="flex items-center space-x-3">
-        {/* Icon */}
-        <div
-          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm ${getActionColor(
-            log.action
-          )}`}
-        >
-          {getActionIcon(log.action)}
-        </div>
-
-        {/* Main Content - All in one row */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 min-w-0">
-              {/* Employee Name */}
-              <span className="text-sm font-semibold text-slate-900 truncate">
-                {log.employeeName}
-              </span>
-
-              {/* Action */}
-              <span className="text-sm text-slate-600 truncate">
-                {log.action.replace(/_/g, " ")}
-              </span>
-
-              {/* Status Badge */}
-              {log.status && (
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                    log.status
-                  )}`}
-                >
-                  {log.status}
-                </span>
-              )}
-              {/* Location Indicator */}
-              {hasLocation && (
-                <button
-                  onClick={() => setShowLocation(!showLocation)}
-                  className="flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  <MapPin className="w-5 h-5" />
-                  <span>Location</span>
-                  {showLocation ? (
-                    <ChevronUp className="w-5 h-5" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5" />
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* Time */}
-            <span className="text-xs text-slate-500 flex-shrink-0">
-              {formatDateTime(log.date, log.time)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Expandable Location Section */}
+    <>
+      <tr className={`${index % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-blue-50 transition-colors`}>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+          {log.employeeEmail}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+          {log.employeeName}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+          <LocationButton
+            log={log}
+            onToggle={() => setShowLocation(!showLocation)}
+            isExpanded={showLocation}
+          />
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+          {log.generatorName || "N/A"}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+          <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
+            {log.action.replace(/_/g, " ")}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+          {dateTime.date}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+          {dateTime.time}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm">
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+              log.status || ""
+            )}`}
+          >
+            {log.status || "N/A"}
+          </span>
+        </td>
+      </tr>
+      {/* Expandable Location Row */}
       {showLocation && hasLocation && coordinates && (
-        <div className="mt-3 ml-11">
-          {loadingAddress ? (
-            <div className="flex items-center space-x-2 text-sm text-slate-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span>Loading address...</span>
-            </div>
-          ) : (
-            <SimpleMap
-              latitude={coordinates[0]}
-              longitude={coordinates[1]}
-              address={locationAddress || "Address not available"}
-              employeeName={log.employeeName}
-              action={log.action}
-            />
-          )}
-        </div>
+        <tr className="bg-slate-900">
+          <td colSpan={8} className="px-6 py-0">
+            {loadingAddress ? (
+              <div className="flex items-center space-x-2 text-sm text-white py-4">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                <span>Loading address...</span>
+              </div>
+            ) : (
+              <SimpleMap
+                latitude={coordinates[0]}
+                longitude={coordinates[1]}
+                address={locationAddress || "Address not available"}
+                employeeName={log.employeeName}
+                action={log.action}
+              />
+            )}
+          </td>
+        </tr>
       )}
-    </div>
+    </>
   );
 };
 
@@ -360,20 +367,9 @@ export const ActivityLogs: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">
+        <h1 className="text-3xl font-bold text-slate-900 ml-4">
           {isAdmin ? "Activity Logs" : "My Activity"}
         </h1>
-        <div className="flex items-center space-x-4 mt-2">
-          {/* <p className="text-slate-600">
-            {isAdmin ? 'System-wide activity monitoring' : 'Your recent activity history'}
-          </p> */}
-          {/* {locationLogsCount > 0 && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              <MapPin className="w-3 h-3 mr-1" />
-              {locationLogsCount} with location
-            </span>
-          )} */}
-        </div>
       </div>
 
       {/* Filters */}
@@ -441,28 +437,58 @@ export const ActivityLogs: React.FC = () => {
         </div>
       </div>
 
-      {/* Activity Timeline */}
+      {/* Activity Table */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-slate-900">
-              Activity Timeline ({filteredLogs.length} entries)
+              Activity Logs ({filteredLogs.length} entries)
             </h3>
             {locationLogsCount > 0 && (
               <div className="text-sm text-slate-500">
-                Click location entries to view map details
+                Click "View" in location column to see map details
               </div>
             )}
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="overflow-x-auto">
           {filteredLogs.length > 0 ? (
-            <div className="space-y-4">
-              {filteredLogs.map((log) => (
-                <ActivityLogItem key={log.logId} log={log} />
-              ))}
-            </div>
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Employee Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Employee Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Generator Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Action
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {filteredLogs.map((log, index) => (
+                  <ActivityLogRow key={log.logId} log={log} index={index} />
+                ))}
+              </tbody>
+            </table>
           ) : (
             <div className="text-center py-12">
               <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
