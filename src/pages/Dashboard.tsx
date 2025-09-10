@@ -249,7 +249,7 @@ export const Dashboard: React.FC = () => {
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="">Select Employee</option>
-              {employees.map((employee) => (
+              {employees.filter((employee) => employee.role !== "ADMIN").map((employee) => (
                 <option key={employee.email} value={employee.email}>
                   {employee.name} ({employee.email})
                 </option>
