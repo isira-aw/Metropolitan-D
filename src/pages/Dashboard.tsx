@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Zap, ClipboardList, CheckSquare, TrendingUp, Clock, Calendar, User, Search } from 'lucide-react';
+import { Users, Zap, ClipboardList, CheckSquare, Search, Calendar, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { MiniJobCardResponse, LogResponse, EmployeeResponse, ReportDataResponse } from '../types/api';
@@ -9,18 +9,18 @@ import { StatusBadge } from '../components/UI/StatusBadge';
 interface DashboardStats {
   totalEmployees: number;
   totalGenerators: number;
-  totalJobs: number;
+  todayJobCards: number;
   totalTasks: number;
   pendingTasks: number;
   completedTasks: number;
 }
 
 export const Dashboard: React.FC = () => {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalEmployees: 0,
     totalGenerators: 0,
-    totalJobs: 0,
+    todayJobCards: 0,
     totalTasks: 0,
     pendingTasks: 0,
     completedTasks: 0
@@ -41,67 +41,44 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
     setDefaultDates();
-  }, [user, isAdmin]);
+  }, [user]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       
-      if (isAdmin) {
-        // Load admin dashboard data
-        const [employeesRes, generatorsRes, jobsRes, tasksRes, logsRes] = await Promise.all([
-          apiService.getAllEmployees(),
-          apiService.getAllGenerators(),
-          apiService.getAllJobCards(),
-          apiService.getAllMiniJobCards(),
-          apiService.getRecentLogs(24)
-        ]);
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Load admin dashboard data
+      const [employeesRes, generatorsRes, todayJobCardsRes, tasksRes, logsRes] = await Promise.all([
+        apiService.getAllEmployees(),
+        apiService.getAllGenerators(),
+        apiService.getJobCardsByDate(today),
+        apiService.getAllMiniJobCards(),
+        apiService.getRecentLogs(24)
+      ]);
 
-        if (employeesRes.status && generatorsRes.status && jobsRes.status && tasksRes.status) {
-          const tasks = tasksRes.data || [];
-          setStats({
-            totalEmployees: employeesRes.data?.length || 0,
-            totalGenerators: generatorsRes.data?.length || 0,
-            totalJobs: jobsRes.data?.length || 0,
-            totalTasks: tasks.length,
-            pendingTasks: tasks.filter(t => t.status === 'PENDING' || t.status === 'ASSIGNED').length,
-            completedTasks: tasks.filter(t => t.status === 'COMPLETED').length
-          });
-          setRecentTasks(tasks.slice(0, 5));
-        }
+      if (employeesRes.status && generatorsRes.status && todayJobCardsRes.status && tasksRes.status) {
+        const tasks = tasksRes.data || [];
+        setStats({
+          totalEmployees: employeesRes.data?.length || 0,
+          totalGenerators: generatorsRes.data?.length || 0,
+          todayJobCards: todayJobCardsRes.data?.length || 0,
+          totalTasks: tasks.length,
+          pendingTasks: tasks.filter(t => t.status === 'PENDING' || t.status === 'ASSIGNED').length,
+          completedTasks: tasks.filter(t => t.status === 'COMPLETED').length
+        });
+        setRecentTasks(tasks.slice(0, 6));
+      }
 
-        if (logsRes.status) {
-          setRecentActivity(logsRes.data?.slice(0, 10) || []);
-        }
+      if (logsRes.status) {
+        setRecentActivity(logsRes.data?.slice(0, 10) || []);
+      }
 
-        // Load employees for report dropdown
-        if (employeesRes.status && employeesRes.data) {
-          setEmployees(employeesRes.data);
-        }
-      } else {
-        // Load employee dashboard data
-        const [tasksRes, logsRes] = await Promise.all([
-          apiService.getMiniJobCardsByEmployee(user?.email || ''),
-          apiService.getLogsByEmployee(user?.email || '')
-        ]);
-
-        if (tasksRes.status) {
-          const tasks = tasksRes.data || [];
-          setStats(prev => ({
-            ...prev,
-            totalTasks: tasks.length,
-            pendingTasks: tasks.filter((t: { status: string; }) => t.status === 'PENDING' || t.status === 'ASSIGNED').length,
-            completedTasks: tasks.filter((t: { status: string; }) => t.status === 'COMPLETED').length
-          }));
-          setRecentTasks(tasks.slice(0, 5));
-        }
-
-        if (logsRes.status) {
-          setRecentActivity(logsRes.data?.slice(0, 10) || []);
-        }
-
-        // For employees, set their own email as default
-        setSelectedEmployee(user?.email || '');
+      // Load employees for report dropdown
+      if (employeesRes.status && employeesRes.data) {
+        setEmployees(employeesRes.data);
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -109,7 +86,6 @@ export const Dashboard: React.FC = () => {
       setLoading(false);
     }
   };
-  
 
   // Set default dates (last 7 days)
   const setDefaultDates = (): void => {
@@ -208,53 +184,26 @@ export const Dashboard: React.FC = () => {
       value: stats.totalEmployees,
       icon: Users,
       color: 'bg-blue-500',
-      
     },
     {
-      title: 'Generators',
+      title: 'Total Generators',
       value: stats.totalGenerators,
       icon: Zap,
       color: 'bg-yellow-500'
     },
     {
-      title: 'Job Cards',
-      value: stats.totalJobs,
+      title: 'Today Job Cards',
+      value: stats.todayJobCards,
       icon: ClipboardList,
       color: 'bg-green-500'
     },
     {
-      title: 'Total Tasks',
+      title: 'Today Tasks',
       value: stats.totalTasks,
       icon: CheckSquare,
       color: 'bg-purple-500'
     }
   ];
-
-  const employeeCards = [
-    {
-      title: 'My Tasks',
-      value: stats.totalTasks,
-      icon: CheckSquare,
-      color: 'bg-blue-500',
-      change: '+3'
-    },
-    {
-      title: 'Pending',
-      value: stats.pendingTasks,
-      icon: Clock,
-      color: 'bg-yellow-500',
-      change: '-2'
-    },
-    {
-      title: 'Completed',
-      value: stats.completedTasks,
-      icon: TrendingUp,
-      color: 'bg-green-500',
-      change: '+5'
-    }
-  ];
-
-  const cards = isAdmin ? adminCards : employeeCards;
 
   return (
     <div className="space-y-6">
@@ -264,13 +213,12 @@ export const Dashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {cards.map((card, index) => (
+        {adminCards.map((card, index) => (
           <div key={index} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600">{card.title}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">{card.value}</p>
-                {/* <p className="text-sm text-green-600 mt-1">{card.change} from last month</p> */}
               </div> 
               <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
                 <card.icon className="w-6 h-6 text-white" />
@@ -298,8 +246,7 @@ export const Dashboard: React.FC = () => {
             <select
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
-              disabled={!isAdmin}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 text-sm"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="">Select Employee</option>
               {employees.map((employee) => (
@@ -308,11 +255,6 @@ export const Dashboard: React.FC = () => {
                 </option>
               ))}
             </select>
-            {!isAdmin && (
-              <p className="text-xs text-slate-500 mt-1">
-                Showing your own data
-              </p>
-            )}
           </div>
 
           {/* Start Date */}
@@ -481,9 +423,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Tasks */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            {isAdmin ? 'Recent Tasks' : 'My Recent Tasks'}
-          </h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Tasks</h3>
           <div className="space-y-4">
             {recentTasks.length > 0 ? (
               recentTasks.map((task) => (
