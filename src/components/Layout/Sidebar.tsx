@@ -61,12 +61,12 @@ export const Sidebar: React.FC = () => {
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="">
-              <div
-                className="w-10 h-10 rounded-lg bg-no-repeat bg-center bg-contain"
-                style={{ backgroundImage: "url('/metro.svg')" }}
+            
+              <img
+                src="https://github.com/isira-aw/Metropolitan-D/blob/main/images.png?raw=true"
+                alt="settings"
+                className="w-10 h-10 rounded-lg"
               />
-            </div>
 
             <div>
               <h1 className="text-xl font-bold">Metropolitan</h1>
