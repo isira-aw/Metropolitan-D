@@ -62,16 +62,17 @@ export const Sidebar: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="">
-              <img
-                src="https://github.com/isira-aw/Metropolitan-B/blob/deploy/metro37.jpg?raw=true"
-                alt="settings"
-                className="w-10 h-10 rounded-lg"
+              <div
+                className="w-10 h-10 rounded-lg bg-no-repeat bg-center bg-contain"
+                style={{ backgroundImage: "url('/metro.svg')" }}
               />
             </div>
 
             <div>
               <h1 className="text-xl font-bold">Metropolitan</h1>
-              <p className="text-slate-400 text-sm">Management System</p>
+              <p className="text-slate-400 text-sm">
+                Employee Management System
+              </p>
             </div>
           </div>
           {/* Close button for mobile */}

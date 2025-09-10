@@ -5,7 +5,7 @@ import {
   Copy,
   ExternalLink,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
@@ -131,7 +131,10 @@ const LocationButton: React.FC<{
 };
 
 // Table Row Component
-const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({ log, index }) => {
+const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({
+  log,
+  index,
+}) => {
   const [showLocation, setShowLocation] = useState(false);
   const [locationAddress, setLocationAddress] = useState<string>("");
   const [loadingAddress, setLoadingAddress] = useState(false);
@@ -199,7 +202,11 @@ const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({ log, in
 
   return (
     <>
-      <tr className={`${index % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-blue-50 transition-colors`}>
+      <tr
+        className={`${
+          index % 2 === 0 ? "bg-white" : "bg-slate-50"
+        } hover:bg-blue-50 transition-colors`}
+      >
         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
           {log.employeeEmail}
         </td>
@@ -216,9 +223,13 @@ const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({ log, in
         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
           {log.generatorName || "N/A"}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-          <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
-            {log.action.replace(/_/g, " ")}
+        <td className="px-6 py-4 whitespace-nowrap text-sm">
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+              log.status || ""
+            )}`}
+          >
+            {log.status || "N/A"}
           </span>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
@@ -227,13 +238,10 @@ const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({ log, in
         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
           {dateTime.time}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm">
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-              log.status || ""
-            )}`}
-          >
-            {log.status || "N/A"}
+
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+          <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">
+            {log.action.replace(/_/g, " ")}
           </span>
         </td>
       </tr>
@@ -470,7 +478,7 @@ export const ActivityLogs: React.FC = () => {
                     Generator Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Action
+                    Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Date
@@ -479,7 +487,7 @@ export const ActivityLogs: React.FC = () => {
                     Time
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Status
+                    Action
                   </th>
                 </tr>
               </thead>
