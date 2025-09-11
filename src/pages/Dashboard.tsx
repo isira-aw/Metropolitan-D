@@ -86,7 +86,7 @@ export const Dashboard: React.FC = () => {
           todayJobCards: todayJobCardsRes.data?.length || 0,
           totalTasks: tasks.length,
           pendingTasks: tasks.filter(
-            (t) => t.status === "PENDING" || t.status === "ASSIGNED"
+            (t) => t.status === "PENDING" || t.status === "TRAVELING"
           ).length,
           completedTasks: tasks.filter((t) => t.status === "COMPLETED").length,
         });

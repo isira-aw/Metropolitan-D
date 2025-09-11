@@ -193,7 +193,7 @@ const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({
     if (status.includes("SUCCESS")) return "bg-green-100 text-green-700";
     if (status.includes("FAILED")) return "bg-red-100 text-red-700";
     if (status.includes("CANCELLED")) return "bg-red-100 text-red-700";
-    if (status.includes("ASSIGNED")) return "bg-blue-100 text-blue-700";
+    if (status.includes("TRAVELING")) return "bg-blue-100 text-blue-700"; 
     if (status.includes("ON_HOLD")) return "bg-yellow-100 text-yellow-700";
     return "bg-slate-100 text-slate-700";
   };
