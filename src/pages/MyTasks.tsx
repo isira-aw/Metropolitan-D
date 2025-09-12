@@ -11,7 +11,7 @@ import { LocationManager } from "../components/MyTasks/LocationManager";
 import { TasksDisplay } from "../components/MyTasks/TasksDisplay";
 
 // Enhanced interface
-interface EnhancedMiniJobCardResponse extends Omit<MiniJobCardResponse, 'generatorName'> {
+interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
   jobType?: "SERVICE" | "REPAIR";
   estimatedTime: string;
   generatorId?: string;
@@ -20,9 +20,8 @@ interface EnhancedMiniJobCardResponse extends Omit<MiniJobCardResponse, 'generat
   generatorContactNumber?: string;
   generatorEmail?: string;
   generatorDescription?: string;
-  orderPosition?: number;
+  orderPosition?: number; // Added for ordering
 }
-
 
 // Location context type
 interface LocationState {
@@ -463,7 +462,7 @@ export const MyTasks: React.FC = () => {
   const getAvailableStatusOptions = (currentStatus: string) => {
     const allOptions = [
       { value: "PENDING", label: "Pending" },
-      { value: "TRAVELING", label: "Traveling" },
+      { value: "ASSIGNED", label: "Assigned" },
       { value: "IN_PROGRESS", label: "In Progress" },
       { value: "ON_HOLD", label: "On Hold" },
       { value: "COMPLETED", label: "Completed" },

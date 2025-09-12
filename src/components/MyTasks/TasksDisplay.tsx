@@ -23,7 +23,7 @@ import { StatusBadge } from "../UI/StatusBadge";
 import { Modal } from "../UI/Modal";
 
 // Enhanced interface
-export interface EnhancedMiniJobCardResponse extends Omit<MiniJobCardResponse, 'generatorName'> {
+interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
   jobType?: "SERVICE" | "REPAIR";
   estimatedTime: string;
   generatorId?: string;
@@ -34,7 +34,6 @@ export interface EnhancedMiniJobCardResponse extends Omit<MiniJobCardResponse, '
   generatorDescription?: string;
   orderPosition?: number;
 }
-
 
 // Location context type
 interface LocationState {
@@ -237,7 +236,7 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-lg text-slate-900 truncate">
-                    {task.generatorName || "Generator NOT SET"}
+                    {task.generatorName || "Generator Task"}
                   </h3>
                   <p className="text-sm text-slate-600">
                     Task #{task.miniJobCardId.slice(-8)}
@@ -379,34 +378,31 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
 
             {/* Action Button - Show for all tasks with proper status filtering */}
             <div className="mb-4">
-              {isToday(task.date) && (
-                <button
-                  onClick={() => onUpdateTask(task)}
-                  disabled={locationPermission === "denied" || locationLoading}
-                  className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                    locationPermission === "denied"
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : locationLoading
-                      ? "bg-blue-400 text-white cursor-wait"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                >
-                  {locationLoading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Getting Location...</span>
-                    </div>
-                  ) : locationPermission === "denied" ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>Location Required</span>
-                    </div>
-                  ) : (
-                    "Update Task"
-                  )}
-                </button>
-              )}
-
+              <button
+                onClick={() => onUpdateTask(task)}
+                disabled={locationPermission === "denied" || locationLoading}
+                className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                  locationPermission === "denied"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : locationLoading
+                    ? "bg-blue-400 text-white cursor-wait"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                {locationLoading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Getting Location...</span>
+                  </div>
+                ) : locationPermission === "denied" ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>Location Required</span>
+                  </div>
+                ) : (
+                  "Update Task"
+                )}
+              </button>
               {locationPermission === "denied" && (
                 <p className="text-xs text-red-600 mt-1 text-center">
                   Enable location access to update tasks
@@ -439,7 +435,7 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
           setUpdateForm({});
         }}
         title={`Update Task - ${
-          updatingTask?.generatorName || "Generator NOT SET"
+          updatingTask?.generatorName || "Generator Task"
         }`}
         size="lg"
       >
