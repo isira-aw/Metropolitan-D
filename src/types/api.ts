@@ -1,5 +1,6 @@
 // API Response Types
 export interface ApiResponse<T> {
+  employeeEmail: ApiResponse<EmployeeTimeReportResponse>;
   status: boolean;
   message: string;
   data: T;
@@ -107,7 +108,7 @@ export interface CreateJobCardRequest {
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD' | 'ASSIGNED';
 
 export interface MiniJobCardResponse {
-  generatorName: string;
+  generatorName?: string;
   estimatedTime: string;
   miniJobCardId: string;
   jobCardId: string;
@@ -161,11 +162,50 @@ export interface HealthResponse {
 
 // Report request interface
 export interface ReportRequest {
-  email: string;
+  employeeEmail: string;
   startDate: string; // Format: YYYY-MM-DD
   endDate: string;   // Format: YYYY-MM-DD
 }
 
+export interface EmployeeTimeReportResponse {
+  employeeEmail: string;
+  employeeName: string;
+  reportStartDate: string;
+  reportEndDate: string;
+  totalJobCards: number;
+  totalTimeSpent: TimeSpentSummary;
+  jobCards: JobCardTimeDetails[];
+  generatedAt: string;
+}
+
+export interface TimeSpentSummary {
+  totalOnHoldTime: string;
+  totalInProgressTime: string;
+  totalAssignedTime: string;
+  totalCombinedTime: string;
+  totalOnHoldMinutes: number;
+  totalInProgressMinutes: number;
+  totalAssignedMinutes: number;
+  totalCombinedMinutes: number;
+}
+
+export interface JobCardTimeDetails {
+  miniJobCardId: string;
+  jobCardId: string;
+  jobCardTitle: string;
+  currentStatus: string;
+  date: string;
+  location: string;
+  timeSpentOnHold: string;
+  timeSpentInProgress: string;
+  timeSpentAssigned: string;
+  onHoldMinutes: number;
+  inProgressMinutes: number;
+  assignedMinutes: number;
+  totalMinutes: number;
+  createdAt: string;
+  updatedAt: string;
+}
 // Daily report data interface
 export interface ReportDataResponse {
   date: string;
