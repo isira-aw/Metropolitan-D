@@ -462,7 +462,7 @@ export const MyTasks: React.FC = () => {
   const getAvailableStatusOptions = (currentStatus: string) => {
     const allOptions = [
       { value: "PENDING", label: "Pending" },
-      { value: "ASSIGNED", label: "Assigned" },
+      { value: "ASSIGNED", label: "Traveling" },
       { value: "IN_PROGRESS", label: "In Progress" },
       { value: "ON_HOLD", label: "On Hold" },
       { value: "COMPLETED", label: "Completed" },
