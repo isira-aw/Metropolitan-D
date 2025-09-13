@@ -221,7 +221,7 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                   {getOrdinalSuffix(task.orderPosition)} Priority
                 </div>
               )}
-              <StatusBadge status={task.status} />
+              <StatusBadge status={task.status === "ASSIGNED" ? "TRAVELING" : task.status} />
             </div>
 
             {/* Task Header with Generator Info */}
@@ -378,35 +378,45 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
 
             {/* Action Button - Show for all tasks with proper status filtering */}
             <div className="mb-4">
-              <button
-                onClick={() => onUpdateTask(task)}
-                disabled={locationPermission === "denied" || locationLoading}
-                className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                  locationPermission === "denied"
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : locationLoading
-                    ? "bg-blue-400 text-white cursor-wait"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
-              >
-                {locationLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Getting Location...</span>
-                  </div>
-                ) : locationPermission === "denied" ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>Location Required</span>
-                  </div>
-                ) : (
-                  "Update Task"
-                )}
-              </button>
-              {locationPermission === "denied" && (
-                <p className="text-xs text-red-600 mt-1 text-center">
-                  Enable location access to update tasks
-                </p>
+              {isToday(task.date) ? (
+                <>
+                  <button
+                    onClick={() => onUpdateTask(task)}
+                    disabled={
+                      locationPermission === "denied" || locationLoading
+                    }
+                    className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                      locationPermission === "denied"
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : locationLoading
+                        ? "bg-blue-400 text-white cursor-wait"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                  >
+                    {locationLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Getting Location...</span>
+                      </div>
+                    ) : locationPermission === "denied" ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>Location Required</span>
+                      </div>
+                    ) : (
+                      "Update Task"
+                    )}
+                  </button>
+                  {locationPermission === "denied" && (
+                    <p className="text-xs text-red-600 mt-1 text-center">
+                      Enable location access to update tasks
+                    </p>
+                  )}
+                </>
+              ) : (
+                <span className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors text-xs font-medium bg-blue-200 text-blue-800">
+                  Not Today
+                </span>
               )}
             </div>
 
@@ -546,7 +556,7 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 bg-slate-50 text-slate-600 rounded-lg cursor-not-allowed"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Total time you spent on this task.
               </label>
@@ -591,7 +601,7 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                   ))}
                 </select>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Status - Filtered to exclude current status */}
