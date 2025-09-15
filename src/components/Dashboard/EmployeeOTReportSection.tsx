@@ -111,17 +111,17 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
     return timeString;
   };
 
-  const parseTimeToMinutes = (timeString: string): number => {
-    if (!timeString) return 0;
-    const [hours, minutes, seconds] = timeString.split(':').map(Number);
-    return (hours * 60) + minutes + (seconds / 60);
-  };
+  // const parseTimeToMinutes = (timeString: string): number => {
+  //   if (!timeString) return 0;
+  //   const [hours, minutes, seconds] = timeString.split(':').map(Number);
+  //   return (hours * 60) + minutes + (seconds / 60);
+  // };
 
-  const formatMinutesToHours = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.floor(minutes % 60);
-    return `${hours}h ${mins}m`;
-  };
+  // const formatMinutesToHours = (minutes: number): string => {
+  //   const hours = Math.floor(minutes / 60);
+  //   const mins = Math.floor(minutes % 60);
+  //   return `${hours}h ${mins}m`;
+  // };
 
   return (
     <div className="space-y-6">
@@ -221,7 +221,7 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center">
                 <Clock className="h-5 w-5 text-blue-600 mr-2" />
@@ -266,7 +266,7 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Table */}
           <div className="overflow-x-auto">

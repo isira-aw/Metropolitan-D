@@ -85,11 +85,11 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
   return (
     <>
       {/* End Session Button */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+      <div className=" flex justify-center mt-6">
         <button
           onClick={() => setShowConfirmModal(true)}
           disabled={isEnding || !currentLocation}
-          className={`px-8 py-4 rounded-full font-semibold text-white shadow-lg transition-all duration-200 ${
+          className={`px-10 py-2 rounded-full font-semibold text-white   duration-200 ${
             !currentLocation
               ? "bg-gray-400 cursor-not-allowed"
               : isEnding
@@ -105,7 +105,7 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
           ) : (
             <div className="flex items-center space-x-2">
               <Clock className="h-5 w-5" />
-              <span>End Work Session</span>
+              <span>End The Day</span>
             </div>
           )}
         </button>
@@ -117,7 +117,7 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="text-center mb-6">
               <Clock className="w-12 h-12 text-red-600 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-gray-900 mb-2">End Work Session</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">End</h3>
               <p className="text-gray-600">
                 Are you sure you want to end your work session? This will calculate your overtime for today.
               </p>

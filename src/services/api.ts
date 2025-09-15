@@ -27,8 +27,8 @@ import {
 } from "../types/api";
 
 
-const BASE_URL = "http://localhost:8080/api";
-//const BASE_URL = 'https://metropolitan-b-production.up.railway.app/api';
+//const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = 'https://metropolitan-b-production.up.railway.app/api';
 
 class ApiService {
   private getAuthHeaders(): HeadersInit {
