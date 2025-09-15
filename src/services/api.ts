@@ -20,10 +20,15 @@ import {
   SendJobCardEmailRequest,
   EmailResponse,
   EmployeeTimeReportResponse,
+  OTReportRequest,
+  OTReportResponse,
+  EndSessionRequest,
+  EndSessionResponse,
 } from "../types/api";
 
-//const BASE_URL = "http://localhost:8080/api";
-const BASE_URL = 'https://metropolitan-b-production.up.railway.app/api';
+
+const BASE_URL = "http://localhost:8080/api";
+//const BASE_URL = 'https://metropolitan-b-production.up.railway.app/api';
 
 class ApiService {
   private getAuthHeaders(): HeadersInit {
@@ -168,6 +173,70 @@ class ApiService {
     return this.handleResponse<GeneratorResponse[]>(response);
   }
 
+  async generateEmployeeOTReport(request: OTReportRequest): Promise<OTReportResponse> {
+    try {
+      const response = await fetch(`${BASE_URL}/reports/employee-ot-report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Failed to generate OT report'}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error generating OT report:', error);
+      throw error;
+    }
+  }
+
+  // End Session
+  async endWorkSession(request: EndSessionRequest): Promise<EndSessionResponse> {
+    try {
+      const params = new URLSearchParams({
+        employeeEmail: request.employeeEmail,
+        date: request.date,
+        endTime: request.endTime,
+        endLocation: request.endLocation
+      });
+
+      const response = await fetch(`${BASE_URL}/ot-time/end-session?${params}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
+        },
+      });
+
+      if (response.ok) {
+        const message = await response.text();
+        return {
+          success: true,
+          message: message
+        };
+      } else {
+        const errorMessage = await response.text();
+        return {
+          success: false,
+          message: errorMessage || 'Failed to end session'
+        };
+      }
+    } catch (error) {
+      console.error('Error ending work session:', error);
+      return {
+        success: false,
+        message: 'Network error occurred. Please try again.'
+      };
+    }
+  }
+  
   // Job Cards
   async getAllJobCards(): Promise<ApiResponse<JobCardResponse[]>> {
     const response = await fetch(`${BASE_URL}/jobcards`, {
