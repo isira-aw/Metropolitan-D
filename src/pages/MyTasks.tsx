@@ -9,6 +9,7 @@ import {
 } from "../types/api";
 import { LocationManager } from "../components/MyTasks/LocationManager";
 import { TasksDisplay } from "../components/MyTasks/TasksDisplay";
+import { EndSessionComponent } from "../components/MyTasks/EndSessionComponent";
 
 // Enhanced interface
 interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
@@ -618,6 +619,16 @@ export const MyTasks: React.FC = () => {
           </button>
         </div>
       )}
+
+       {/* End Session Component - Fixed at bottom */}
+    {user?.email && locationRequirementMet && (
+      <EndSessionComponent
+        userEmail={user.email}
+        currentLocation={currentLocation}
+        locationAddress={locationAddress}
+        onLocationUpdate={getCurrentLocation}
+      />
+    )}
     </div>
   );
 };

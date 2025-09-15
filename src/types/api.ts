@@ -288,3 +288,48 @@ export interface EmailResponse {
   sentAt: string;
   status: "SENT" | "FAILED" | "PENDING";
 }
+
+export interface OTReportRequest {
+  employeeEmail: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface OTRecord {
+  date: string;
+  firstTime: string;
+  lastTime: string;
+  firstLocation: string;
+  lastLocation: string;
+  morningOT: string;
+  eveningOT: string;
+  dailyTotalOT: string;
+}
+
+export interface OTReportResponse {
+  data: OTReportResponse;
+  employeeEmail: string;
+  employeeName: string;
+  startDate: string;
+  endDate: string;
+  otRecords: OTRecord[];
+  totalMorningOT: string;
+  totalEveningOT: string;
+  totalOT: string;
+}
+
+// end section button
+
+export interface EndSessionRequest {
+  employeeEmail: string;
+  date: string;
+  endTime: string;
+  endLocation: string;
+}
+
+export interface EndSessionResponse {
+  success: boolean;
+  message: string;
+  morningOT?: string;
+  eveningOT?: string;
+}

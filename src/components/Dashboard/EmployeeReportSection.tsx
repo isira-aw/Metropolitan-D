@@ -135,7 +135,7 @@ export const EmployeeReportSection: React.FC<EmployeeReportSectionProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+    <div className="bg-white rounded-xl shadow-sm ">
       <div className="flex items-center mb-6">
         <Search className="h-6 w-6 text-blue-600 mr-3" />
         <h2 className="text-xl font-semibold text-slate-900">
