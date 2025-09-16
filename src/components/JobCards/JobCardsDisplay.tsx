@@ -14,6 +14,7 @@ import {
   X,
   Eye,
   MapPin,
+  Loader2,
 } from "lucide-react";
 import {
   JobCardResponse,
@@ -239,6 +240,7 @@ interface JobCardsDisplayProps {
   handleEmployeeToggle: (email: string) => void;
   handleCreateJob: () => Promise<void>;
   resetForm: () => void;
+  creating?: boolean; // Added optional creating state
 }
 
 export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
@@ -268,10 +270,12 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
   handleEmployeeToggle,
   handleCreateJob,
   resetForm,
+  creating = false, // Default to false if not provided
 }) => {
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedJobCard, setSelectedJobCard] =
     useState<JobCardResponse | null>(null);
+  const [isInternalCreating, setIsInternalCreating] = useState(false);
 
   const formatTime = (timeString: string) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
@@ -289,6 +293,24 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
   const closeDetailView = () => {
     setShowDetailView(false);
     setSelectedJobCard(null);
+  };
+
+  // Handle create job with 4 second loading
+  const handleCreateJobWithLoading = async () => {
+    if (isInternalCreating) return; // Prevent multiple clicks
+    
+    setIsInternalCreating(true);
+    
+    try {
+      await handleCreateJob();
+    } catch (error) {
+      console.error('Error creating job:', error);
+    }
+    
+    // Ensure minimum 4 second loading time
+    setTimeout(() => {
+      setIsInternalCreating(false);
+    }, 4000);
   };
 
   // Helper function to get job type styling
@@ -557,7 +579,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
         </div>
       </Modal>
 
-      {/* Create Job Modal */}
+      {/* Create Job Modal - Simplified */}
       <Modal
         isOpen={showCreateModal}
         onClose={() => {
@@ -567,70 +589,71 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
         title="Create New Job Card"
         size="lg"
       >
-        <div className="space-y-6">
-          {/* Job Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">
-              Job Type
-            </label>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setJobType("SERVICE")}
-                className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 transition-colors ${
-                  jobType === "SERVICE"
-                    ? "border-green-500 bg-green-50 text-green-700"
-                    : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <Settings className="w-5 h-5" />
-                <span>Service</span>
-              </button>
-              <button
-                onClick={() => setJobType("REPAIR")}
-                className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 transition-colors ${
-                  jobType === "REPAIR"
-                    ? "border-orange-500 bg-orange-50 text-orange-700"
-                    : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <Wrench className="w-5 h-5" />
-                <span>Repair</span>
-              </button>
-              <button
-                onClick={() => setJobType("VISIT")}
-                className={`flex items-center space-x-2 px-4 py-3 rounded-lg border-2 transition-colors ${
-                  jobType === "VISIT"
-                    ? "border-purple-500 bg-purple-50 text-purple-700"
-                    : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <MapPin className="w-5 h-5" />
-                <span>Visit</span>
-              </button>
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Left Column */}
+          <div className="flex-1 p-4 rounded-lg space-y-6">
+            {/* Job Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-3">
+                Job Type
+              </label>
+              <div className="flex flex-col space-y-2">
+                <button
+                  onClick={() => setJobType("SERVICE")}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg border-2 transition-colors justify-center ${
+                    jobType === "SERVICE"
+                      ? "border-green-500 bg-green-50 text-green-700"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="text-sm">Service</span>
+                </button>
+                <button
+                  onClick={() => setJobType("REPAIR")}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg border-2 transition-colors justify-center ${
+                    jobType === "REPAIR"
+                      ? "border-orange-500 bg-orange-50 text-orange-700"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <Wrench className="w-4 h-4" />
+                  <span className="text-sm">Repair</span>
+                </button>
+                <button
+                  onClick={() => setJobType("VISIT")}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg border-2 transition-colors justify-center ${
+                    jobType === "VISIT"
+                      ? "border-purple-500 bg-purple-50 text-purple-700"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm">Visit</span>
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Generator Selection with Search */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Generator
-            </label>
-            <SearchableGeneratorSelect
-              generators={generators}
-              value={formData.generatorId}
-              onChange={(generatorId) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  generatorId,
-                }))
-              }
-              placeholder="Select a generator"
-              className="w-full"
-            />
-          </div>
+            {/* Generator Selection */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Generator
+              </label>
+              <SearchableGeneratorSelect
+                generators={generators}
+                value={formData.generatorId}
+                onChange={(generatorId) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    generatorId,
+                  }))
+                }
+                placeholder="Select a generator"
+                className="w-full"
+              />
+            </div>
 
-          {/* Date and Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Date */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Date
@@ -644,6 +667,8 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+
+            {/* Estimated Time */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Estimated Time
@@ -692,190 +717,161 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
             </div>
           </div>
 
-          {/* Employee Selection with Search */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Assign Employees (max 5) - {formData.employeeEmails.length}{" "}
-              selected
-            </label>
+          {/* Right Column */}
+          <div className="flex-1 p-4 rounded-lg">
+            {/* Employee Selection */}
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700">
+                Assign Employees (max 5) - {formData.employeeEmails.length} selected
+              </label>
 
-            {/* Search Input */}
-            <div className="relative mb-3">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              <input
-                type="text"
-                value={employeeSearchTerm}
-                onChange={(e) => setEmployeeSearchTerm(e.target.value)}
-                placeholder="Search employees by name or email..."
-                className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-              {employeeSearchTerm && (
-                <button
-                  onClick={() => setEmployeeSearchTerm("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                  title="Clear search"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Selected Employees Summary */}
-            {formData.employeeEmails.length > 0 && (
-              <div className="mb-3 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-blue-900 mb-2">
-                  Selected Employees:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {formData.employeeEmails.map((email) => {
-                    const employee = employees.find(
-                      (emp) => emp.email === email
-                    );
-                    return employee ? (
-                      <span
-                        key={email}
-                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {employee.name}
-                        <button
-                          onClick={() => handleEmployeeToggle(email)}
-                          className="ml-1.5 text-blue-600 hover:text-blue-800"
-                          title="Remove employee"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ) : null;
-                  })}
-                </div>
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={employeeSearchTerm}
+                  onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                  placeholder="Search employees..."
+                  className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                {employeeSearchTerm && (
+                  <button
+                    onClick={() => setEmployeeSearchTerm("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-            )}
 
-            {/* Employee List */}
-            <div className="max-h-64 overflow-y-auto border border-slate-300 rounded-lg">
-              {filteredEmployees.length > 0 ? (
-                <div className="p-3 space-y-2">
-                  {filteredEmployees.map((employee) => (
-                    <label
-                      key={employee.email}
-                      className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                        formData.employeeEmails.includes(employee.email)
-                          ? "bg-blue-50 border border-blue-200"
-                          : "hover:bg-slate-50 border border-transparent"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.employeeEmails.includes(
-                          employee.email
-                        )}
-                        onChange={() => handleEmployeeToggle(employee.email)}
-                        disabled={
-                          !formData.employeeEmails.includes(employee.email) &&
-                          formData.employeeEmails.length >= 5
-                        }
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-900">
-                          {employee.name}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {employee.email}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
+              {/* Selected Employees */}
+              {formData.employeeEmails.length > 0 && (
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="flex flex-wrap gap-2">
+                    {formData.employeeEmails.map((email) => {
+                      const employee = employees.find((emp) => emp.email === email);
+                      return employee ? (
                         <span
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            employee.role === "ADMIN"
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
+                          key={email}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                         >
-                          {employee.role}
+                          {employee.name}
+                          <button
+                            onClick={() => handleEmployeeToggle(email)}
+                            className="ml-1.5 text-blue-600 hover:text-blue-800"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </span>
-                        {formData.employeeEmails.includes(employee.email) && (
-                          <div
-                            className="w-2 h-2 bg-blue-500 rounded-full"
-                            title="Selected"
-                          ></div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6 text-center text-slate-500">
-                  {employeeSearchTerm ? (
-                    <div>
-                      <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p>No employees found matching "{employeeSearchTerm}"</p>
-                      <button
-                        onClick={() => setEmployeeSearchTerm("")}
-                        className="mt-2 text-sm text-blue-600 hover:text-blue-700"
-                      >
-                        Clear search
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      <p>No employees available</p>
-                    </div>
-                  )}
+                      ) : null;
+                    })}
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Quick Actions */}
-            <div className="mt-3 flex justify-between items-center text-sm">
-              <div className="flex space-x-2">
-                {formData.employeeEmails.length > 0 && (
+              {/* Employee List */}
+              <div className="max-h-64 overflow-y-auto border border-slate-300 rounded-lg">
+                {filteredEmployees.length > 0 ? (
+                  <div className="p-2">
+                    {filteredEmployees.map((employee) => (
+                      <label
+                        key={employee.email}
+                        className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                          formData.employeeEmails.includes(employee.email)
+                            ? "bg-blue-50"
+                            : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.employeeEmails.includes(employee.email)}
+                          onChange={() => handleEmployeeToggle(employee.email)}
+                          disabled={
+                            !formData.employeeEmails.includes(employee.email) &&
+                            formData.employeeEmails.length >= 5
+                          }
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-900 truncate">
+                            {employee.name}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">
+                            {employee.email}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-slate-500">
+                    <Users className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm">
+                      {employeeSearchTerm 
+                        ? `No employees found matching "${employeeSearchTerm}"` 
+                        : "No employees available"
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Actions */}
+              {formData.employeeEmails.length > 0 && (
+                <div className="flex justify-between items-center">
                   <button
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, employeeEmails: [] }))
                     }
-                    className="text-red-600 hover:text-red-700 font-medium"
+                    className="text-sm text-red-600 hover:text-red-700 font-medium"
                   >
-                    Clear All
+                    Clear All ({formData.employeeEmails.length})
                   </button>
-                )}
-              </div>
-              <div className="text-slate-500">
-                {filteredEmployees.length} employee
-                {filteredEmployees.length !== 1 ? "s" : ""} available
-                {formData.employeeEmails.length >= 5 && (
-                  <span className="block text-orange-600 text-xs mt-1">
-                    Maximum of 5 employees can be selected
-                  </span>
-                )}
-              </div>
+                  {formData.employeeEmails.length >= 5 && (
+                    <span className="text-xs text-orange-600">
+                      Maximum reached
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              onClick={() => {
-                setShowCreateModal(false);
-                resetForm();
-              }}
-              className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreateJob}
-              disabled={
-                !formData.generatorId ||
-                !formData.date ||
-                !formData.estimatedTime ||
-                formData.employeeEmails.length === 0
-              }
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg transition-colors"
-            >
-              Create Job Card
-            </button>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200 mt-4">
+          <button
+            onClick={() => {
+              setShowCreateModal(false);
+              resetForm();
+            }}
+            disabled={creating}
+            className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateJobWithLoading}
+            disabled={
+              isInternalCreating ||
+              creating ||
+              !formData.generatorId ||
+              !formData.date ||
+              !formData.estimatedTime ||
+              formData.employeeEmails.length === 0
+            }
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg transition-colors flex items-center space-x-2 min-w-[140px] justify-center"
+          >
+            {(isInternalCreating || creating) ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Creating...</span>
+              </>
+            ) : (
+              <span>Create Job Card</span>
+            )}
+          </button>
         </div>
       </Modal>
     </>

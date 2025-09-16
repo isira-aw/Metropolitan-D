@@ -195,6 +195,7 @@ const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({
     if (status.includes("CANCELLED")) return "bg-red-100 text-red-700";
     if (status.includes("ASSIGNED")) return "bg-blue-100 text-blue-700";
     if (status.includes("ON_HOLD")) return "bg-yellow-100 text-yellow-700";
+    if (status.includes("END_DATE")) return "bg-red-500 text-white";
     return "bg-slate-100 text-slate-700";
   };
 
@@ -429,8 +430,8 @@ export const ActivityLogs: React.FC = () => {
               <option value={1}>Last Hour</option>
               <option value={24}>Last 24 Hours</option>
               <option value={168}>Last Week</option>
-              <option value={720}>Last Month</option>
-              <option value={0}>All Time</option>
+              {/* <option value={720}>Last Month</option>
+              <option value={0}>All Time</option> */}
             </select>
           </div>
 

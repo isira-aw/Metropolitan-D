@@ -7,6 +7,7 @@ interface EndSessionProps {
   currentLocation: { lat: number; lon: number } | null;
   locationAddress: string;
   onLocationUpdate: () => Promise<void>;
+  disabled?: boolean;
 }
 
 export const EndSessionComponent: React.FC<EndSessionProps> = ({
