@@ -502,14 +502,46 @@ export const MyTasks: React.FC = () => {
 
   // Get available status options (exclude current status)
   const getAvailableStatusOptions = (currentStatus: string) => {
-    const allOptions = [
-      { value: "PENDING", label: "Pending" },
-      { value: "ASSIGNED", label: "Traveling" },
-      { value: "IN_PROGRESS", label: "In Progress" },
-      { value: "ON_HOLD", label: "On Hold" },
-      { value: "COMPLETED", label: "Completed" },
-      { value: "CANCELLED", label: "Cancelled" },
-    ];
+    const allOptions = [];
+    if (currentStatus == "PENDING") {
+      allOptions.push({ value: "ASSIGNED", label: "Traveling" });
+    } 
+    else if (currentStatus == "ASSIGNED") {
+      allOptions.push({ value: "IN_PROGRESS", label: "In Progress" },
+        { value: "ON_HOLD", label: "On Hold (Take a break.)" },
+        { value: "CANCELLED", label: "Cancelled" }
+      );
+    } 
+    else if (currentStatus == "IN_PROGRESS") {
+      allOptions.push({ value: "ON_HOLD", label: "On Hold (Take a break.)" },
+                { value: "COMPLETED", label: "Completed" },
+        { value: "CANCELLED", label: "Cancelled" }
+      );
+    } 
+    else if (currentStatus == "ON_HOLD") {
+      allOptions.push({ value: "IN_PROGRESS", label: "In Progress" },
+        { value: "COMPLETED", label: "Completed" },
+        { value: "CANCELLED", label: "Cancelled" });
+    }else if (currentStatus == "COMPLETED") {
+      allOptions.push(
+        { value: "ON_HOLD", label: "On Hold (Take a break.)" }
+      );
+    } 
+    else if (currentStatus == "CANCELLED") {
+      allOptions.push(
+        { value: "ON_HOLD", label: "On Hold (Take a break.)" }
+      );
+    } 
+    else {
+      allOptions.push(
+        { value: "PENDING", label: "Pending" },
+        { value: "ASSIGNED", label: "Traveling" },
+        { value: "IN_PROGRESS", label: "In Progress" },
+        { value: "ON_HOLD", label: "On Hold (Take a break.)" },
+        { value: "COMPLETED", label: "Completed" },
+        { value: "CANCELLED", label: "Cancelled" }
+      );
+    }
 
     return allOptions.filter((option) => option.value !== currentStatus);
   };
