@@ -679,7 +679,7 @@ export const MyTasks: React.FC = () => {
       )}
 
       {/* NEW: Show blocking status notification */}
-      {!hasBlockingStatus && (
+      {!hasBlockingStatus && filteredTasks.length !== 0 && (
         <div className="">
           {user?.email && (
             <EndSessionComponent
