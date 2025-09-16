@@ -74,6 +74,9 @@ interface TasksDisplayProps {
     currentStatus: string
   ) => { value: string; label: string }[];
   getOrdinalSuffix: (position: number) => string;
+    canEditTask: (task: EnhancedMiniJobCardResponse) => boolean;
+  hasBlockingStatus: boolean;
+  activeTaskId: string | null;
 }
 
 export const TasksDisplay: React.FC<TasksDisplayProps> = ({

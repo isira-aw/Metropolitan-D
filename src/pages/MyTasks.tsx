@@ -3,10 +3,7 @@ import { format } from "date-fns-tz";
 import { Zap, MapPin, AlertTriangle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
-import {
-  MiniJobCardResponse,
-  UpdateMiniJobCardRequest,
-} from "../types/api";
+import { MiniJobCardResponse, UpdateMiniJobCardRequest } from "../types/api";
 import { LocationManager } from "../components/MyTasks/LocationManager";
 import { TasksDisplay } from "../components/MyTasks/TasksDisplay";
 import { EndSessionComponent } from "../components/MyTasks/EndSessionComponent";
@@ -117,10 +114,19 @@ const LocationRequirementGuard: React.FC<{
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-bold mb-4">How to Enable Location</h3>
             <div className="text-sm text-gray-700 space-y-2">
-              <p><strong>Chrome/Edge:</strong> Click lock icon → Allow location</p>
-              <p><strong>Firefox:</strong> Click shield icon → Allow location</p>
-              <p><strong>Safari:</strong> Safari menu → Preferences → Websites → Location</p>
-              <p className="text-xs text-gray-500 mt-3">After enabling, click Refresh button</p>
+              <p>
+                <strong>Chrome/Edge:</strong> Click lock icon → Allow location
+              </p>
+              <p>
+                <strong>Firefox:</strong> Click shield icon → Allow location
+              </p>
+              <p>
+                <strong>Safari:</strong> Safari menu → Preferences → Websites →
+                Location
+              </p>
+              <p className="text-xs text-gray-500 mt-3">
+                After enabling, click Refresh button
+              </p>
             </div>
             <button
               onClick={() => setShowHelpModal(false)}
@@ -138,15 +144,20 @@ const LocationRequirementGuard: React.FC<{
 export const MyTasks: React.FC = () => {
   const { user } = useAuth();
   const [, setTasks] = useState<EnhancedMiniJobCardResponse[]>([]);
-  const [filteredTasks, setFilteredTasks] = useState<EnhancedMiniJobCardResponse[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<
+    EnhancedMiniJobCardResponse[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState<string>("");
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updatingTask, setUpdatingTask] = useState<EnhancedMiniJobCardResponse | null>(null);
+  const [updatingTask, setUpdatingTask] =
+    useState<EnhancedMiniJobCardResponse | null>(null);
   const [updateForm, setUpdateForm] = useState<UpdateMiniJobCardRequest>({});
 
   // Location states
-  const [currentLocation, setCurrentLocation] = useState<LocationState | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<LocationState | null>(
+    null
+  );
   const [locationAddress, setLocationAddress] = useState<string>("");
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationPermission, setLocationPermission] = useState<
@@ -155,10 +166,14 @@ export const MyTasks: React.FC = () => {
   const [showLocationAlert, setShowLocationAlert] = useState(false);
   const [locationError, setLocationError] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // New state for location requirement check
   const [locationRequirementMet, setLocationRequirementMet] = useState(false);
   const [initialLocationCheck, setInitialLocationCheck] = useState(true);
+
+  // NEW: State to track if any task is in blocking status
+  const [hasBlockingStatus, setHasBlockingStatus] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.email) {
@@ -194,11 +209,33 @@ export const MyTasks: React.FC = () => {
     }
   }, [currentLocation]);
 
+  // NEW: Check for blocking statuses whenever tasks change
+  useEffect(() => {
+    checkForBlockingStatuses();
+  }, [filteredTasks]);
+
+  // NEW: Function to check if any task has a blocking status
+  const checkForBlockingStatuses = () => {
+    const blockingStatuses = ["IN_PROGRESS", "ON_HOLD", "ASSIGNED"];
+    const taskWithBlockingStatus = filteredTasks.find((task) =>
+      blockingStatuses.includes(task.status)
+    );
+
+    setHasBlockingStatus(!!taskWithBlockingStatus);
+    setActiveTaskId(taskWithBlockingStatus?.miniJobCardId || null);
+  };
+
+  // NEW: Function to check if a task can be edited
+  const canEditTask = (task: EnhancedMiniJobCardResponse): boolean => {
+    if (!hasBlockingStatus) return true;
+    return task.miniJobCardId === activeTaskId;
+  };
+
   // Check if location requirements are met
   const checkLocationRequirements = async () => {
     setInitialLocationCheck(true);
     setLocationLoading(true);
-    
+
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by this browser");
       setLocationPermission("denied");
@@ -214,7 +251,7 @@ export const MyTasks: React.FC = () => {
         const permission = await navigator.permissions.query({
           name: "geolocation",
         });
-        
+
         if (permission.state === "granted") {
           // Try to get current position to verify device location is also enabled
           navigator.geolocation.getCurrentPosition(
@@ -240,11 +277,15 @@ export const MyTasks: React.FC = () => {
             }
           );
         } else {
-          setLocationPermission(permission.state as "granted" | "denied" | "prompt");
+          setLocationPermission(
+            permission.state as "granted" | "denied" | "prompt"
+          );
           setLocationRequirementMet(false);
           setLocationLoading(false);
           setInitialLocationCheck(false);
-          setLocationError("Location permission is required to access this page");
+          setLocationError(
+            "Location permission is required to access this page"
+          );
         }
       } else {
         // Fallback for browsers without permissions API
@@ -303,7 +344,7 @@ export const MyTasks: React.FC = () => {
   const handleQuickEnableLocation = async () => {
     setLocationLoading(true);
     setLocationError("");
-    
+
     const success = await requestLocationPermission();
     if (success) {
       setLocationRequirementMet(true);
@@ -404,7 +445,7 @@ export const MyTasks: React.FC = () => {
   // Function to convert time string to minutes for sorting
   const timeToMinutes = (timeString: string): number => {
     if (!timeString) return 0;
-    const [hours, minutes] = timeString.split(':').map(Number);
+    const [hours, minutes] = timeString.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
@@ -425,7 +466,7 @@ export const MyTasks: React.FC = () => {
     try {
       setLoading(true);
       console.log(`Loading tasks for date: ${filterDate}`);
-      
+
       const response = await apiService.getMiniJobCardsByEmployeeAndDate(
         user.email,
         filterDate
@@ -441,7 +482,7 @@ export const MyTasks: React.FC = () => {
           })
           .map((task, index) => ({
             ...task,
-            orderPosition: index + 1
+            orderPosition: index + 1,
           }));
 
         setTasks(sortedTasks);
@@ -467,13 +508,22 @@ export const MyTasks: React.FC = () => {
       { value: "IN_PROGRESS", label: "In Progress" },
       { value: "ON_HOLD", label: "On Hold" },
       { value: "COMPLETED", label: "Completed" },
-      { value: "CANCELLED", label: "Cancelled" }
+      { value: "CANCELLED", label: "Cancelled" },
     ];
-    
-    return allOptions.filter(option => option.value !== currentStatus);
+
+    return allOptions.filter((option) => option.value !== currentStatus);
   };
 
+  // MODIFIED: Check if task can be edited before allowing update
   const handleUpdateTask = (task: EnhancedMiniJobCardResponse) => {
+    if (!canEditTask(task)) {
+      // Show notification or alert that editing is blocked
+      alert(
+        "Cannot edit this task. Another task is currently in progress, on hold, or assigned."
+      );
+      return;
+    }
+
     setUpdatingTask(task);
     setUpdateForm({
       status: task.status,
@@ -491,7 +541,7 @@ export const MyTasks: React.FC = () => {
     if (!updatingTask || !currentLocation) return;
 
     setIsUpdating(true);
-    
+
     const updatedForm = {
       ...updateForm,
       location: `${currentLocation.lat},${currentLocation.lon}`,
@@ -500,7 +550,7 @@ export const MyTasks: React.FC = () => {
         lon: currentLocation.lon,
       },
     };
-    
+
     try {
       const response = await apiService.updateMiniJobCard(
         updatingTask.miniJobCardId,
@@ -551,7 +601,12 @@ export const MyTasks: React.FC = () => {
   };
 
   // Show location requirement guard if conditions not met
-  if (initialLocationCheck || (!locationRequirementMet && !locationLoading && locationPermission !== "checking")) {
+  if (
+    initialLocationCheck ||
+    (!locationRequirementMet &&
+      !locationLoading &&
+      locationPermission !== "checking")
+  ) {
     return (
       <LocationRequirementGuard
         onEnableLocation={handleQuickEnableLocation}
@@ -579,7 +634,7 @@ export const MyTasks: React.FC = () => {
     <div className="space-y-6">
       {/* Location Management Component */}
       <LocationManager locationContext={locationContext} />
-      
+
       <h1 className="text-2xl font-bold ml-5">My Tasks</h1>
 
       {/* Tasks Display Component */}
@@ -602,6 +657,9 @@ export const MyTasks: React.FC = () => {
         isUpdating={isUpdating}
         getAvailableStatusOptions={getAvailableStatusOptions}
         getOrdinalSuffix={getOrdinalSuffix}
+        canEditTask={canEditTask}
+        hasBlockingStatus={hasBlockingStatus}
+        activeTaskId={activeTaskId}
       />
 
       {/* No tasks message */}
@@ -620,15 +678,21 @@ export const MyTasks: React.FC = () => {
         </div>
       )}
 
-       {/* End Session Component - Fixed at bottom */}
-    {user?.email && locationRequirementMet && (
-      <EndSessionComponent
-        userEmail={user.email}
-        currentLocation={currentLocation}
-        locationAddress={locationAddress}
-        onLocationUpdate={getCurrentLocation}
-      />
-    )}
+      {/* NEW: Show blocking status notification */}
+      {!hasBlockingStatus && (
+        <div className="">
+          {user?.email && (
+            <EndSessionComponent
+              userEmail={user.email}
+              currentLocation={currentLocation}
+              locationAddress={locationAddress}
+              onLocationUpdate={getCurrentLocation}
+            />
+          )}
+        </div>
+      )}
+
+      {/* End Session Component - Fixed at bottom - MODIFIED: Disable when blocking status exists */}
     </div>
   );
 };
