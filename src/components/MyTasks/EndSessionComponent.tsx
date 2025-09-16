@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Clock, MapPin, AlertCircle, CheckCircle } from "lucide-react";
 import { apiService } from "../../services/api";
 
@@ -15,6 +15,7 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
   currentLocation,
   locationAddress,
   onLocationUpdate,
+  disabled = false,
 }) => {
   const [isEnding, setIsEnding] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -22,6 +23,43 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
     success: boolean;
     message: string;
   } | null>(null);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
+
+  // NEW: Automatically call location function when component mounts
+  useEffect(() => {
+    const initializeLocation = async () => {
+      if (!currentLocation) {
+        setIsLocationLoading(true);
+        try {
+          await onLocationUpdate();
+        } catch (error) {
+          console.error('Error getting initial location:', error);
+        } finally {
+          setIsLocationLoading(false);
+        }
+      }
+    };
+
+    initializeLocation();
+  }, []); // Empty dependency array means this runs once when component mounts
+
+  // NEW: Also call location update when the component becomes enabled
+  useEffect(() => {
+    if (!disabled && !currentLocation && !isLocationLoading) {
+      const updateLocationWhenEnabled = async () => {
+        setIsLocationLoading(true);
+        try {
+          await onLocationUpdate();
+        } catch (error) {
+          console.error('Error updating location when enabled:', error);
+        } finally {
+          setIsLocationLoading(false);
+        }
+      };
+
+      updateLocationWhenEnabled();
+    }
+  }, [disabled]); // Run when disabled state changes
 
   const handleEndSession = async () => {
     if (!currentLocation) {
@@ -67,6 +105,25 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
     }
   };
 
+  // NEW: Enhanced button click handler with location check
+  const handleEndButtonClick = async () => {
+    if (!currentLocation && !isLocationLoading) {
+      setIsLocationLoading(true);
+      try {
+        await onLocationUpdate();
+      } catch (error) {
+        console.error('Error getting location before ending session:', error);
+      } finally {
+        setIsLocationLoading(false);
+      }
+    }
+    
+    // Only show modal if we have location or if location loading completed
+    if (currentLocation || !isLocationLoading) {
+      setShowConfirmModal(true);
+    }
+  };
+
   const getCurrentSriLankaTime = () => {
     return new Date().toLocaleTimeString('en-US', {
       timeZone: 'Asia/Colombo',
@@ -83,25 +140,36 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
     });
   };
 
+  // NEW: Determine if button should be disabled
+  const isButtonDisabled = disabled || isEnding || isLocationLoading;
+
   return (
     <>
       {/* End Session Button */}
-      <div className=" flex justify-center mt-6">
+      <div className="flex justify-center mt-6">
         <button
-          onClick={() => setShowConfirmModal(true)}
-          disabled={isEnding || !currentLocation}
-          className={`px-10 py-2 rounded-full font-semibold text-white   duration-200 ${
-            !currentLocation
+          onClick={handleEndButtonClick}
+          disabled={isButtonDisabled}
+          className={`px-10 py-2 rounded-full font-semibold text-white duration-200 ${
+            isButtonDisabled
               ? "bg-gray-400 cursor-not-allowed"
-              : isEnding
-              ? "bg-red-400 cursor-not-allowed"
               : "bg-red-600 hover:bg-red-700 hover:shadow-xl transform hover:scale-105"
           }`}
         >
-          {isEnding ? (
+          {isLocationLoading ? (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>Getting Location...</span>
+            </div>
+          ) : isEnding ? (
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               <span>Ending Session...</span>
+            </div>
+          ) : disabled ? (
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5" />
+              <span>Complete Active Tasks First</span>
             </div>
           ) : (
             <div className="flex items-center space-x-2">
@@ -112,13 +180,22 @@ export const EndSessionComponent: React.FC<EndSessionProps> = ({
         </button>
       </div>
 
+      {/* NEW: Disabled state notification */}
+      {disabled && (
+        <div className="flex justify-center mt-2">
+          <p className="text-sm text-gray-600 text-center max-w-md">
+            Please complete or update all active tasks before ending your session
+          </p>
+        </div>
+      )}
+
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="text-center mb-6">
               <Clock className="w-12 h-12 text-red-600 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-gray-900 mb-2">End</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">End Work Session</h3>
               <p className="text-gray-600">
                 Are you sure you want to end your work session? This will calculate your overtime for today.
               </p>

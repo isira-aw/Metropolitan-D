@@ -504,35 +504,34 @@ export const MyTasks: React.FC = () => {
   const getAvailableStatusOptions = (currentStatus: string) => {
     const allOptions = [];
     if (currentStatus == "PENDING") {
-      allOptions.push({ value: "ASSIGNED", label: "Traveling" });
-    } 
-    else if (currentStatus == "ASSIGNED") {
-      allOptions.push({ value: "IN_PROGRESS", label: "In Progress" },
+      allOptions.push({ value: "ASSIGNED", label: "Traveling" },
+        { value: "CANCELLED", label: "Cancelled" }
+      );
+    } else if (currentStatus == "ASSIGNED") {
+      allOptions.push(
+        { value: "PENDING", label: "Pending" },
+        { value: "IN_PROGRESS", label: "In Progress" },
         { value: "ON_HOLD", label: "On Hold (Take a break.)" },
         { value: "CANCELLED", label: "Cancelled" }
       );
-    } 
-    else if (currentStatus == "IN_PROGRESS") {
-      allOptions.push({ value: "ON_HOLD", label: "On Hold (Take a break.)" },
-                { value: "COMPLETED", label: "Completed" },
+    } else if (currentStatus == "IN_PROGRESS") {
+      allOptions.push(
+        { value: "ON_HOLD", label: "On Hold (Take a break.)" },
+        { value: "COMPLETED", label: "Completed" },
         { value: "CANCELLED", label: "Cancelled" }
       );
-    } 
-    else if (currentStatus == "ON_HOLD") {
-      allOptions.push({ value: "IN_PROGRESS", label: "In Progress" },
-        { value: "COMPLETED", label: "Completed" },
-        { value: "CANCELLED", label: "Cancelled" });
-    }else if (currentStatus == "COMPLETED") {
+    } else if (currentStatus == "ON_HOLD") {
       allOptions.push(
-        { value: "ON_HOLD", label: "On Hold (Take a break.)" }
+        { value: "PENDING", label: "Pending" },
+        { value: "IN_PROGRESS", label: "In Progress" },
+        { value: "ASSIGNED", label: "Traveling" },
+        { value: "CANCELLED", label: "Cancelled" }
       );
-    } 
-    else if (currentStatus == "CANCELLED") {
-      allOptions.push(
-        { value: "ON_HOLD", label: "On Hold (Take a break.)" }
-      );
-    } 
-    else {
+    } else if (currentStatus == "COMPLETED") {
+      allOptions.push({ value: "ON_HOLD", label: "On Hold (Take a break.)" });
+    } else if (currentStatus == "CANCELLED") {
+      allOptions.push({ value: "ON_HOLD", label: "On Hold (Take a break.)" });
+    } else {
       allOptions.push(
         { value: "PENDING", label: "Pending" },
         { value: "ASSIGNED", label: "Traveling" },
@@ -551,7 +550,7 @@ export const MyTasks: React.FC = () => {
     if (!canEditTask(task)) {
       // Show notification or alert that editing is blocked
       alert(
-        "Cannot edit this task. Another task is currently in progress, on hold, or assigned."
+        "Cannot edit this task. Another task is currently In Progress, On Hold , or Traveling."
       );
       return;
     }
@@ -723,8 +722,6 @@ export const MyTasks: React.FC = () => {
           )}
         </div>
       )}
-
-      {/* End Session Component - Fixed at bottom - MODIFIED: Disable when blocking status exists */}
     </div>
   );
 };
