@@ -17,9 +17,7 @@ const SimpleMap: React.FC<{
   latitude: number;
   longitude: number;
   address: string;
-  employeeName: string;
-  action: string;
-}> = ({ latitude, longitude, address, employeeName, action }) => {
+}> = ({ latitude, longitude, address }) => {
   const [copySuccess, setCopySuccess] = useState(false);
 
   const openInGoogleMaps = () => {
@@ -38,15 +36,25 @@ const SimpleMap: React.FC<{
   };
 
   return (
-    <div className="mt-3 bg-slate-800 rounded-lg overflow-hidden">
-      <div className="p-4">
+    <div className="m-3  rounded-lg overflow-hidden ">
+      {/* <div className="mb-2 rounded-lg ">
         <h4 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
           <MapPin className="w-5 h-5 text-blue-400" />
           <span>Location Details - {action}</span>
-        </h4>
+        </h4> */}
 
         <div className="space-y-3">
-          <div className="bg-slate-700/50 rounded-lg p-3">
+          <div className="md:col-span-2">
+            <span className="text-slate-500">Address:</span>
+            <p className="text-slate-800 font-medium">{address}</p>
+          </div>
+          <div className="md:col-span-2">
+            <span className="text-slate-400">Coordinates:</span>
+            <p className="text-slate-800 font-medium">
+              {latitude.toFixed(6)}, {longitude.toFixed(6)}
+            </p>
+          </div>
+          {/* <div className="bg-slate-700/50 rounded-lg p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-slate-400">Employee:</span>
@@ -69,7 +77,7 @@ const SimpleMap: React.FC<{
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="flex flex-col sm:flex-row gap-2">
             <button
@@ -93,7 +101,7 @@ const SimpleMap: React.FC<{
             </button>
           </div>
         </div>
-      </div>
+      {/* </div> */}
     </div>
   );
 };
@@ -248,10 +256,10 @@ const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({
       </tr>
       {/* Expandable Location Row */}
       {showLocation && hasLocation && coordinates && (
-        <tr className="bg-slate-900">
+        <tr className="">
           <td colSpan={8} className="px-6 py-0">
             {loadingAddress ? (
-              <div className="flex items-center space-x-2 text-sm text-white py-4">
+              <div className="flex items-center space-x-2 text-sm  py-4">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
                 <span>Loading address...</span>
               </div>
@@ -260,8 +268,6 @@ const ActivityLogRow: React.FC<{ log: LogResponse; index: number }> = ({
                 latitude={coordinates[0]}
                 longitude={coordinates[1]}
                 address={locationAddress || "Address not available"}
-                employeeName={log.employeeName}
-                action={log.action}
               />
             )}
           </td>
