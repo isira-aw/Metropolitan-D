@@ -174,6 +174,13 @@ export const MyTasks: React.FC = () => {
   // NEW: State to track if any task is in blocking status
   const [hasBlockingStatus, setHasBlockingStatus] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const isToday = (dateString: string) => {
+    const sriLankaTime = format(new Date(), "yyyy-MM-dd", {
+      timeZone: "Asia/Colombo",
+    });
+    const taskDate = format(new Date(dateString), "yyyy-MM-dd");
+    return sriLankaTime === taskDate;
+  };
 
   useEffect(() => {
     if (user?.email) {
@@ -473,7 +480,6 @@ export const MyTasks: React.FC = () => {
       );
 
       if (response.status && response.data) {
-        // Sort tasks by estimatedTime and add order position
         const sortedTasks = response.data
           .sort((a, b) => {
             const aTime = timeToMinutes(a.estimatedTime || "00:00");
@@ -504,7 +510,8 @@ export const MyTasks: React.FC = () => {
   const getAvailableStatusOptions = (currentStatus: string) => {
     const allOptions = [];
     if (currentStatus == "PENDING") {
-      allOptions.push({ value: "ASSIGNED", label: "Traveling" },
+      allOptions.push(
+        { value: "ASSIGNED", label: "Traveling" },
         { value: "CANCELLED", label: "Cancelled" }
       );
     } else if (currentStatus == "ASSIGNED") {
@@ -710,18 +717,21 @@ export const MyTasks: React.FC = () => {
       )}
 
       {/* NEW: Show blocking status notification */}
-      {!hasBlockingStatus && filteredTasks.length !== 0 && (
-        <div className="">
-          {user?.email && (
-            <EndSessionComponent
-              userEmail={user.email}
-              currentLocation={currentLocation}
-              locationAddress={locationAddress}
-              onLocationUpdate={getCurrentLocation}
-            />
-          )}
-        </div>
-      )}
+      {filterDate &&
+        isToday(filterDate) &&
+        !hasBlockingStatus &&
+        filteredTasks.length !== 0 && (
+          <div>
+            {user?.email && (
+              <EndSessionComponent
+                userEmail={user.email}
+                currentLocation={currentLocation}
+                locationAddress={locationAddress}
+                onLocationUpdate={getCurrentLocation}
+              />
+            )}
+          </div>
+        )}
     </div>
   );
 };
