@@ -211,7 +211,6 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
                     }}
                     className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-50 transition-colors text-left first:rounded-t-lg last:rounded-b-lg"
                   >
-                    <Zap className="w-4 h-4 text-slate-400 mr-2" />
                     <span className="text-slate-700">{generator}</span>
                   </button>
                 ))
