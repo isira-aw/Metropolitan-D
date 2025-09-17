@@ -123,6 +123,13 @@ class ApiService {
     return this.handleResponse<GeneratorResponse[]>(response);
   }
 
+  async getAllGeneratorsCount(): Promise<ApiResponse<number>> {
+    const response = await fetch(`${BASE_URL}/generators/count`, {
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse<number>(response);
+  }
+
   async getGenerator(id: string): Promise<ApiResponse<GeneratorResponse>> {
     const response = await fetch(`${BASE_URL}/generators/${id}`, {
       headers: this.getAuthHeaders(),

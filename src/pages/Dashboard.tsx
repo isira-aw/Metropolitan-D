@@ -64,7 +64,7 @@ export const Dashboard: React.FC = () => {
       const [employeesRes, generatorsRes, todayJobCardsRes, tasksRes, logsRes] =
         await Promise.all([
           apiService.getAllEmployees(),
-          apiService.getAllGenerators(),
+          apiService.getAllGeneratorsCount(),
           apiService.getJobCardsByDate(today),
           apiService.getAllMiniJobCards(),
           apiService.getRecentLogs(24),
@@ -79,7 +79,7 @@ export const Dashboard: React.FC = () => {
         const tasks = tasksRes.data || [];
         setStats({
           totalEmployees: employeesRes.data?.length || 0,
-          totalGenerators: generatorsRes.data?.length || 0,
+          totalGenerators: generatorsRes.data || 0,
           todayJobCards: todayJobCardsRes.data?.length || 0,
           totalTasks: tasks.length,
           pendingTasks: tasks.filter(
