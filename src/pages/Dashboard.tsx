@@ -1,7 +1,7 @@
 // Complete Dashboard Component with both Time Tracking and OT Reports
 // File: src/pages/Dashboard.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Zap,
@@ -21,6 +21,7 @@ import { LoadingSpinner } from "../components/UI/LoadingSpinner";
 import { StatusBadge } from "../components/UI/StatusBadge";
 import { EmployeeReportSection } from "../components/Dashboard/EmployeeReportSection";
 import { EmployeeOTReportSection } from "../components/Dashboard/EmployeeOTReportSection";
+import { format } from "date-fns-tz";
 
 interface DashboardStats {
   totalEmployees: number;
@@ -47,18 +48,23 @@ export const Dashboard: React.FC = () => {
   const [recentActivity, setRecentActivity] = useState<LogResponse[]>([]);
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeReportTab, setActiveReportTab] = useState<ReportTab>("time-tracking");
+  const [activeReportTab, setActiveReportTab] =
+    useState<ReportTab>("time-tracking");
 
   useEffect(() => {
     loadDashboardData();
   }, [user]);
-
+  const getSriLankanToday = useCallback(() => {
+    return format(new Date(), "yyyy-MM-dd", {
+      timeZone: "Asia/Colombo",
+    });
+  }, []);
   const loadDashboardData = async () => {
     try {
       setLoading(true);
 
       // Get today's date in YYYY-MM-DD format
-      const today = new Date().toISOString().split("T")[0];
+      const today = getSriLankanToday();
 
       // Load admin dashboard data
       const [employeesRes, generatorsRes, todayJobCardsRes, tasksRes, logsRes] =
@@ -176,9 +182,12 @@ export const Dashboard: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         {/* Reports Header */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Employee Reports</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">
+            Employee Reports
+          </h2>
           <p className="text-slate-600 text-sm">
-            Generate detailed reports for employee time tracking and overtime analysis
+            Generate detailed reports for employee time tracking and overtime
+            analysis
           </p>
         </div>
 
@@ -217,7 +226,7 @@ export const Dashboard: React.FC = () => {
           {activeReportTab === "time-tracking" && (
             <EmployeeReportSection employees={employees} />
           )}
-          
+
           {activeReportTab === "overtime" && (
             <EmployeeOTReportSection employees={employees} />
           )}
