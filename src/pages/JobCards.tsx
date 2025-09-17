@@ -14,7 +14,7 @@ import { JobCardsFilters } from "../components/JobCards/JobCardsFilters";
 export const JobCards: React.FC = () => {
   const [jobCards, setJobCards] = useState<JobCardResponse[]>([]);
   const [filteredJobCards, setFilteredJobCards] = useState<JobCardResponse[]>([]);
-  const [generators, setGenerators] = useState<GeneratorResponse[]>([]);
+  const [generators, ] = useState<GeneratorResponse[]>([]); // Keep empty array for compatibility
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
   // Updated to include VISIT type
@@ -73,14 +73,9 @@ export const JobCards: React.FC = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [generatorsRes, employeesRes] = await Promise.all([
-        apiService.getAllGenerators(),
-        apiService.getAllEmployees(),
-      ]);
+      // Removed getAllGenerators() call - only load employees now
+      const employeesRes = await apiService.getAllEmployees();
 
-      if (generatorsRes.status && generatorsRes.data) {
-        setGenerators(generatorsRes.data);
-      }
       if (employeesRes.status && employeesRes.data) {
         setEmployees(employeesRes.data);
       }
@@ -347,7 +342,7 @@ export const JobCards: React.FC = () => {
             >
               Clear all filters
             </button>
-          )}
+            )}
         </div>
       )}
     </div>
