@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Zap, Mail, Phone } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Search, Edit, Trash2, Zap, Mail, Phone, Loader2, AlertTriangle, X } from 'lucide-react';
 import { apiService } from '../services/api';
 import { GeneratorResponse, CreateGeneratorRequest } from '../types/api';
 import { LoadingSpinner } from '../components/UI/LoadingSpinner';
@@ -10,6 +10,8 @@ export const Generators: React.FC = () => {
   const [filteredGenerators, setFilteredGenerators] = useState<GeneratorResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingGenerator, setEditingGenerator] = useState<GeneratorResponse | null>(null);
@@ -21,18 +23,69 @@ export const Generators: React.FC = () => {
     description: ''
   });
 
+  const searchTimeoutRef = useRef<number | null>(null);
+
   useEffect(() => {
     loadGenerators();
   }, []);
 
-useEffect(() => {
-  if (searchTerm) {
-    searchGenerators(searchTerm.toLowerCase());
-  } else {
-    setFilteredGenerators(generators);
-  }
-}, [generators, searchTerm]);
+  // Enhanced search with API integration
+  const performSearch = useCallback(async (term: string) => {
+    if (term.trim().length === 0) {
+      setFilteredGenerators(generators);
+      setIsSearching(false);
+      setSearchError(null);
+      return;
+    }
 
+    if (term.trim().length < 2) {
+      setFilteredGenerators([]);
+      setIsSearching(false);
+      setSearchError(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      // Use the search API endpoint
+      const response = await apiService.searchGenerators(term.trim());
+      
+      if (response.status && response.data) {
+        setFilteredGenerators(response.data);
+        setSearchError(null);
+      } else {
+        setSearchError(response.message || "Search failed");
+        setFilteredGenerators([]);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchError("Failed to search generators");
+      setFilteredGenerators([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [generators]);
+
+  // Debounced search effect
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = window.setTimeout(() => {
+      performSearch(searchTerm);
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, performSearch]);
 
   const loadGenerators = async () => {
     try {
@@ -40,6 +93,7 @@ useEffect(() => {
       const response = await apiService.getAllGenerators();
       if (response.status && response.data) {
         setGenerators(response.data);
+        setFilteredGenerators(response.data); // Show all initially
       }
     } catch (error) {
       console.error('Error loading generators:', error);
@@ -47,18 +101,6 @@ useEffect(() => {
       setLoading(false);
     }
   };
-
-const searchGenerators = async (term: string) => {
-  try {
-    const filtered = generators.filter((generator) =>
-      generator.name.toLowerCase().includes(term.toLowerCase())
-    );
-
-    setFilteredGenerators(filtered);
-  } catch (error) {
-    console.error('Error searching generators:', error);
-  }
-};
 
   const handleCreate = async () => {
     try {
@@ -132,6 +174,22 @@ const searchGenerators = async (term: string) => {
     });
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTerm = e.target.value;
+    setSearchTerm(newTerm);
+    
+    // Show loading immediately for better UX
+    if (newTerm.trim().length >= 2) {
+      setIsSearching(true);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setSearchError(null);
+    setFilteredGenerators(generators);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -145,7 +203,6 @@ const searchGenerators = async (term: string) => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 ml-4">Generators</h1>
-          {/* <p className="text-slate-600 mt-2">Manage your generator fleet</p> */}
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
@@ -156,18 +213,64 @@ const searchGenerators = async (term: string) => {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Enhanced Search Bar */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+          {isSearching && (
+            <Loader2 className="absolute right-12 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5 animate-spin" />
+          )}
+          {searchTerm && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
           <input
             type="text"
-            placeholder="Search generators by name..."
+            placeholder="Search generators by name (type at least 2 characters)..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={handleSearchChange}
+            className={`w-full pl-10 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              isSearching ? 'pr-16' : searchTerm ? 'pr-10' : 'pr-4'
+            }`}
           />
         </div>
+        
+        {/* Search Status Messages */}
+        {searchTerm.trim().length > 0 && searchTerm.trim().length < 2 && (
+          <p className="text-sm text-amber-600 mt-2 flex items-center">
+            <AlertTriangle className="w-4 h-4 mr-1 flex-shrink-0" />
+            Type at least 2 characters to search
+          </p>
+        )}
+        {searchError && (
+          <div className="mt-2 flex items-center justify-between">
+            <p className="text-sm text-red-600 flex items-center">
+              <AlertTriangle className="w-4 h-4 mr-1 flex-shrink-0" />
+              {searchError}
+            </p>
+            <button
+              onClick={() => {
+                setSearchError(null);
+                if (searchTerm.trim().length >= 2) {
+                  performSearch(searchTerm);
+                }
+              }}
+              className="text-sm text-blue-600 hover:text-blue-700 px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        {isSearching && (
+          <p className="text-sm text-blue-600 mt-2 flex items-center">
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            Searching generators...
+          </p>
+        )}
       </div>
 
       {/* Generators Grid */}
@@ -222,10 +325,38 @@ const searchGenerators = async (term: string) => {
         ))}
       </div>
 
-      {filteredGenerators.length === 0 && (
+      {/* Enhanced Empty State */}
+      {!isSearching && filteredGenerators.length === 0 && (
         <div className="text-center py-12">
           <Zap className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">No generators found</p>
+          <h3 className="text-lg font-medium text-slate-900 mb-2">
+            {searchTerm.trim() 
+              ? "No generators found" 
+              : "No generators available"
+            }
+          </h3>
+          <p className="text-slate-500 mb-4">
+            {searchTerm.trim() 
+              ? `No generators match "${searchTerm}"` 
+              : "Start by adding your first generator"
+            }
+          </p>
+          {searchTerm.trim() ? (
+            <button
+              onClick={clearSearch}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Clear search to see all generators
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center space-x-2 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Generator</span>
+            </button>
+          )}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 // API Response Types
 export interface ApiResponse<T> {
+  success: GeneratorResponse[];
   employeeEmail: ApiResponse<EmployeeTimeReportResponse>;
   status: boolean;
   message: string;

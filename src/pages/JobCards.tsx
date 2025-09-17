@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus, Settings } from "lucide-react";
+import { format } from "date-fns-tz";
 import { apiService } from "../services/api";
 import {
   JobCardResponse,
@@ -13,13 +14,13 @@ import { JobCardsFilters } from "../components/JobCards/JobCardsFilters";
 
 export const JobCards: React.FC = () => {
   const [jobCards, setJobCards] = useState<JobCardResponse[]>([]);
-  const [filteredJobCards, setFilteredJobCards] = useState<JobCardResponse[]>([]);
-  const [generators, setGenerators] = useState<GeneratorResponse[]>([]);
+  const [generators, ] = useState<GeneratorResponse[]>([]); // Keep empty array for compatibility
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
   // Updated to include VISIT type
   const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR" | "VISIT">("ALL");
   const [filterDate, setFilterDate] = useState<string>("");
+  const [filterGeneratorName, setFilterGeneratorName] = useState<string>(""); // New generator filter state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<JobCardResponse | null>(null);
@@ -39,14 +40,39 @@ export const JobCards: React.FC = () => {
   const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState<EmployeeResponse[]>([]);
 
+  // Get Sri Lankan today's date
+  const getSriLankanToday = useCallback(() => {
+    return format(new Date(), "yyyy-MM-dd", {
+      timeZone: "Asia/Colombo",
+    });
+  }, []);
+
+  // Extract unique generator names from job cards
+  const availableGenerators = useMemo(() => {
+    const generators = jobCards.map(card => card.generator.name);
+    return [...new Set(generators)].sort();
+  }, [jobCards]);
+
+  // Apply all filters to job cards
+  const filteredJobCards = useMemo(() => {
+    return jobCards.filter(card => {
+      // Filter by job type
+      const matchesType = filterType === "ALL" || card.jobType === filterType;
+      
+      // Filter by generator name
+      const matchesGenerator = !filterGeneratorName || 
+        card.generator.name.toLowerCase().includes(filterGeneratorName.toLowerCase());
+      
+      // Note: Date filtering is handled by backend API calls, not here
+      // This is just for additional client-side filtering if needed
+      
+      return matchesType && matchesGenerator;
+    });
+  }, [jobCards, filterType, filterGeneratorName]);
+
   useEffect(() => {
     loadInitialData();
   }, []);
-
-  useEffect(() => {
-    // Apply job type filtering on the current job cards
-    filterByJobType();
-  }, [jobCards, filterType]);
 
   // Filter employees based on search term
   useEffect(() => {
@@ -73,20 +99,17 @@ export const JobCards: React.FC = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [generatorsRes, employeesRes] = await Promise.all([
-        apiService.getAllGenerators(),
-        apiService.getAllEmployees(),
-      ]);
+      // Removed getAllGenerators() call - only load employees now
+      const employeesRes = await apiService.getAllEmployees();
 
-      if (generatorsRes.status && generatorsRes.data) {
-        setGenerators(generatorsRes.data);
-      }
       if (employeesRes.status && employeesRes.data) {
         setEmployees(employeesRes.data);
       }
 
-      // Load all job cards initially
-      await loadAllJobCards();
+      // Automatically load today's job cards on page load/reload
+      const todayDate = getSriLankanToday();
+      setFilterDate(todayDate);
+      await loadJobCardsByDate(todayDate);
     } catch (error) {
       console.error("Error loading initial data:", error);
     } finally {
@@ -117,17 +140,6 @@ export const JobCards: React.FC = () => {
     } finally {
       setDateFilterLoading(false);
     }
-  };
-
-  const filterByJobType = () => {
-    let filtered = jobCards;
-
-    // Filter by job type
-    if (filterType !== "ALL") {
-      filtered = filtered.filter((job) => job.jobType === filterType);
-    }
-
-    setFilteredJobCards(filtered);
   };
 
   const handleDateFilterChange = async (date: string) => {
@@ -226,11 +238,12 @@ export const JobCards: React.FC = () => {
   const clearAllFilters = async () => {
     setFilterType("ALL");
     setFilterDate("");
+    setFilterGeneratorName("");
     await loadAllJobCards();
   };
 
   const setTodayFilter = async () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getSriLankanToday();
     setFilterDate(today);
     await loadJobCardsByDate(today);
   };
@@ -273,16 +286,19 @@ export const JobCards: React.FC = () => {
       </div>
 
       {/* Filters Component */}
-      <JobCardsFilters
+      <JobCardsFilters 
         filterType={filterType}
         setFilterType={setFilterType}
         filterDate={filterDate}
         handleDateFilterChange={handleDateFilterChange}
+        filterGeneratorName={filterGeneratorName}
+        setFilterGeneratorName={setFilterGeneratorName}
         setTodayFilter={setTodayFilter}
         clearAllFilters={clearAllFilters}
         dateFilterLoading={dateFilterLoading}
         filteredJobCards={filteredJobCards}
         formatDate={formatDate}
+        availableGenerators={availableGenerators}
       />
 
       {/* Loading state for date filtering */}
@@ -330,17 +346,23 @@ export const JobCards: React.FC = () => {
         <div className="text-center py-12">
           <Settings className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">
-            {filterDate && filterType !== "ALL"
-              ? `No ${filterType.toLowerCase()} job cards for ${formatDate(
-                  filterDate
-                )}`
+            {filterDate && filterType !== "ALL" && filterGeneratorName
+              ? `No ${filterType.toLowerCase()} job cards for ${formatDate(filterDate)} with generator "${filterGeneratorName}"`
+              : filterDate && filterType !== "ALL"
+              ? `No ${filterType.toLowerCase()} job cards for ${formatDate(filterDate)}`
+              : filterDate && filterGeneratorName
+              ? `No job cards for ${formatDate(filterDate)} with generator "${filterGeneratorName}"`
               : filterDate
               ? `No job cards for ${formatDate(filterDate)}`
+              : filterType !== "ALL" && filterGeneratorName
+              ? `No ${filterType.toLowerCase()} job cards with generator "${filterGeneratorName}"`
               : filterType !== "ALL"
               ? `No ${filterType.toLowerCase()} job cards found`
+              : filterGeneratorName
+              ? `No job cards with generator "${filterGeneratorName}"`
               : "No job cards found"}
           </p>
-          {(filterType !== "ALL" || filterDate) && (
+          {(filterType !== "ALL" || filterDate || filterGeneratorName) && (
             <button
               onClick={clearAllFilters}
               className="mt-2 text-sm text-blue-600 hover:text-blue-700"

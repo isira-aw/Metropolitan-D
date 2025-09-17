@@ -8,7 +8,8 @@ import {
   Wrench, 
   MapPin,
   RotateCcw,
-  ChevronDown 
+  ChevronDown,
+  Zap
 } from "lucide-react";
 import { format } from "date-fns-tz";
 import { JobCardResponse } from "../../types/api";
@@ -18,11 +19,14 @@ interface JobCardsFiltersProps {
   setFilterType: (type: "ALL" | "SERVICE" | "REPAIR" | "VISIT") => void;
   filterDate: string;
   handleDateFilterChange: (date: string) => void;
+  filterGeneratorName: string;
+  setFilterGeneratorName: (name: string) => void;
   setTodayFilter: () => Promise<void>;
   clearAllFilters: () => Promise<void>;
   dateFilterLoading: boolean;
   filteredJobCards: JobCardResponse[];
   formatDate: (dateString: string) => string;
+  availableGenerators?: string[]; // Optional list of generator names for suggestions
 }
 
 export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
@@ -30,12 +34,16 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
   setFilterType,
   filterDate,
   handleDateFilterChange,
+  filterGeneratorName,
+  setFilterGeneratorName,
   clearAllFilters,
   dateFilterLoading,
   filteredJobCards,
   formatDate,
+  availableGenerators = [],
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isGeneratorDropdownOpen, setIsGeneratorDropdownOpen] = useState(false);
 
   const getFilterTypeDisplay = () => {
     switch (filterType) {
@@ -58,6 +66,11 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
     handleDateFilterChange(today);
   };
 
+  // Filter available generators based on search input
+  const filteredGenerators = availableGenerators.filter(generator =>
+    generator.toLowerCase().includes(filterGeneratorName.toLowerCase())
+  );
+
   const currentFilter = getFilterTypeDisplay();
 
   return (
@@ -71,7 +84,7 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
             {filteredJobCards.length} {filteredJobCards.length === 1 ? "result" : "results"}
           </span>
         </div>
-        {(filterType !== "ALL" || filterDate) && (
+        {(filterType !== "ALL" || filterDate || filterGeneratorName) && (
           <button
             onClick={clearAllFilters}
             disabled={dateFilterLoading}
@@ -84,7 +97,7 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
       </div>
 
       {/* Filter Controls Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Job Type Dropdown */}
         <div className="relative">
           <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -155,6 +168,61 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
           )}
         </div>
 
+        {/* Generator Name Filter */}
+        <div className="relative">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Generator Name
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={filterGeneratorName}
+              onChange={(e) => {
+                setFilterGeneratorName(e.target.value);
+                setIsGeneratorDropdownOpen(true);
+              }}
+              onFocus={() => setIsGeneratorDropdownOpen(true)}
+              onBlur={() => setTimeout(() => setIsGeneratorDropdownOpen(false), 150)}
+              placeholder="Type to search generators..."
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm pr-8"
+            />
+            <Zap className="absolute inset-y-0 right-0 pr-3 flex items-center w-4 h-4 text-slate-400 pointer-events-none" />
+            {filterGeneratorName && (
+              <button
+                onClick={() => setFilterGeneratorName("")}
+                className="absolute inset-y-0 right-6 pr-2 flex items-center text-slate-400 hover:text-slate-600"
+                title="Clear generator filter"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Generator Suggestions Dropdown */}
+          {isGeneratorDropdownOpen && availableGenerators.length > 0 && (
+            <div className="absolute top-full left-0 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
+              {filteredGenerators.length > 0 ? (
+                filteredGenerators.slice(0, 10).map((generator, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setFilterGeneratorName(generator);
+                      setIsGeneratorDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-50 transition-colors text-left first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    <span className="text-slate-700">{generator}</span>
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-sm text-slate-500">
+                  No generators found
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Date Filter */}
         <div className="relative">
           <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -217,7 +285,7 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
       </div>
 
       {/* Active Filters Display */}
-      {(filterType !== "ALL" || filterDate) && (
+      {(filterType !== "ALL" || filterDate || filterGeneratorName) && (
         <div className="mt-6 pt-4 border-t border-slate-200">
           <div className="flex items-center flex-wrap gap-2">
             <span className="text-sm font-medium text-slate-700">Active Filters:</span>
@@ -228,6 +296,19 @@ export const JobCardsFilters: React.FC<JobCardsFiltersProps> = ({
                   onClick={() => setFilterType("ALL")}
                   className="text-blue-600 hover:text-blue-800 transition-colors"
                   title="Remove filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filterGeneratorName && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-amber-100 text-amber-800">
+                <Zap className="w-3 h-3 mr-1" />
+                <span className="mr-2">{filterGeneratorName}</span>
+                <button
+                  onClick={() => setFilterGeneratorName("")}
+                  className="text-amber-600 hover:text-amber-800 transition-colors"
+                  title="Remove generator filter"
                 >
                   <X className="w-3 h-3" />
                 </button>

@@ -1,5 +1,5 @@
 // components/JobCards/JobCardsDisplay.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Calendar,
   Clock,
@@ -24,10 +24,12 @@ import {
 } from "../../types/api";
 import { Modal } from "../UI/Modal";
 import { JobCardDetailView } from "./JobCardDetailView";
+import { apiService } from "../../services/api";
 
-// Searchable Generator Select Component
+
+// Enhanced Searchable Generator Select Component with API Integration
 interface SearchableGeneratorSelectProps {
-  generators: GeneratorResponse[];
+  generators: GeneratorResponse[]; // Keep for initial load/fallback
   value: string;
   onChange: (generatorId: string) => void;
   placeholder?: string;
@@ -35,39 +37,85 @@ interface SearchableGeneratorSelectProps {
 }
 
 const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
-  generators,
+  generators: initialGenerators,
   value,
   onChange,
-  placeholder = "Select a generator",
+  placeholder = "Search Generator",
   className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredGenerators, setFilteredGenerators] =
-    useState<GeneratorResponse[]>(generators);
-  const [selectedGenerator, setSelectedGenerator] =
-    useState<GeneratorResponse | null>(null);
+  const [filteredGenerators, setFilteredGenerators] = useState<GeneratorResponse[]>([]);
+  const [selectedGenerator, setSelectedGenerator] = useState<GeneratorResponse | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<number | null>(null);
 
-  // Filter generators based on search term
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredGenerators(generators);
-    } else {
-      const filtered = generators.filter((generator) =>
-        generator.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredGenerators(filtered);
+  // Handle search term changes with debouncing
+  const performSearch = useCallback(async (term: string) => {
+    if (term.trim().length < 2) {
+      setFilteredGenerators([]);
+      setIsSearching(false);
+      setSearchError(null);
+      return;
     }
-  }, [searchTerm, generators]);
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      const response = await apiService.searchGenerators(term.trim());
+      
+      if (response.status && response.data) { // Changed from response.success to response.status
+        setFilteredGenerators(response.data);
+        setSearchError(null);
+      } else {
+        setSearchError(response.message || "Search failed");
+        setFilteredGenerators([]);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchError("Failed to search generators");
+      setFilteredGenerators([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchTerm.trim() === "") {
+      setFilteredGenerators([]);
+      setIsSearching(false);
+      setSearchError(null);
+      return;
+    }
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = window.setTimeout(() => {
+      performSearch(searchTerm);
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, performSearch]);
 
   // Find selected generator when value changes
   useEffect(() => {
-    const selected = generators.find((gen) => gen.generatorId === value);
+    const selected = initialGenerators.find((gen) => gen.generatorId === value) ||
+                    filteredGenerators.find((gen) => gen.generatorId === value);
     setSelectedGenerator(selected || null);
-  }, [value, generators]);
+  }, [value, initialGenerators, filteredGenerators]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -97,6 +145,7 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
     setSelectedGenerator(generator);
     setIsOpen(false);
     setSearchTerm("");
+    setSearchError(null);
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -104,12 +153,25 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
     onChange("");
     setSelectedGenerator(null);
     setSearchTerm("");
+    setSearchError(null);
   };
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
       setSearchTerm("");
+      setFilteredGenerators([]);
+      setSearchError(null);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTerm = e.target.value;
+    setSearchTerm(newTerm);
+    
+    // Show loading immediately for better UX
+    if (newTerm.trim().length >= 2) {
+      setIsSearching(true);
     }
   };
 
@@ -125,7 +187,7 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
           className={selectedGenerator ? "text-slate-900" : "text-slate-500"}
         >
           {selectedGenerator
-            ? `${selectedGenerator.name} - ${selectedGenerator.capacity}`
+            ? `${selectedGenerator.name} - ${selectedGenerator.capacity} KW`
             : placeholder}
         </span>
         <div className="flex items-center space-x-2">
@@ -153,20 +215,56 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
           <div className="p-3 border-b border-slate-200">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              {isSearching && (
+                <Loader2 className="w-4 h-4 text-blue-500 absolute right-3 top-1/2 transform -translate-y-1/2 animate-spin" />
+              )}
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search generators by name..."
-                className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                onChange={handleSearchChange}
+                placeholder="Type at least 2 characters to search..."
+                className={`w-full pl-10 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
+                  isSearching ? 'pr-10' : 'pr-3'
+                }`}
               />
             </div>
+            {/* Search status messages */}
+            {searchTerm.trim().length > 0 && searchTerm.trim().length < 2 && (
+              <p className="text-xs text-amber-600 mt-1">
+                Type at least 2 characters to search
+              </p>
+            )}
+            {searchError && (
+              <p className="text-xs text-red-600 mt-1">
+                {searchError}
+              </p>
+            )}
           </div>
 
           {/* Options List */}
           <div className="max-h-48 overflow-y-auto">
-            {filteredGenerators.length > 0 ? (
+            {isSearching ? (
+              <div className="px-3 py-4 text-slate-500 text-center">
+                <Loader2 className="w-5 h-5 text-slate-400 mx-auto mb-2 animate-spin" />
+                <p className="text-sm">Searching generators...</p>
+              </div>
+            ) : searchError ? (
+              <div className="px-3 py-4 text-red-500 text-center">
+                <p className="text-sm">{searchError}</p>
+                <button
+                  onClick={() => {
+                    setSearchError(null);
+                    if (searchTerm.trim().length >= 2) {
+                      performSearch(searchTerm);
+                    }
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-700 mt-1"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : filteredGenerators.length > 0 ? (
               <>
                 {/* Clear selection option */}
                 <button
@@ -176,6 +274,7 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
                     setSelectedGenerator(null);
                     setIsOpen(false);
                     setSearchTerm("");
+                    setSearchError(null);
                   }}
                   className="w-full px-3 py-2 text-left hover:bg-slate-50 text-slate-500 border-b border-slate-100"
                 >
@@ -194,13 +293,22 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
                   >
                     <div className="flex flex-col">
                       <span className="font-medium">{generator.name}</span>
+                      <span className="text-sm text-slate-500">
+                        {generator.capacity} KW
+                        {generator.contactNumber && ` • ${generator.contactNumber}`}
+                      </span>
                     </div>
                   </button>
                 ))}
               </>
             ) : (
               <div className="px-3 py-4 text-slate-500 text-center">
-                No generators found matching "{searchTerm}"
+                <p className="text-sm">
+                  {searchTerm.trim() 
+                    ? `No generators found matching "${searchTerm}"` 
+                    : "No generators available"
+                  }
+                </p>
               </div>
             )}
           </div>
@@ -634,7 +742,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
               </div>
             </div>
 
-            {/* Generator Selection */}
+            {/* Generator Selection - NOW WITH API SEARCH */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Generator
@@ -648,7 +756,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                     generatorId,
                   }))
                 }
-                placeholder="Select a generator"
+                placeholder="Search Generator"
                 className="w-full"
               />
             </div>
