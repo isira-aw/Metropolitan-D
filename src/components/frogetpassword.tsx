@@ -8,6 +8,7 @@ export const ForgotPasswordComponent: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(''); // Add this line
   const [error, setError] = useState('');
   const [showError, setShowError] = useState(false);
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ export const ForgotPasswordComponent: React.FC = () => {
       const response = await apiService.forgotPassword({ email: email.trim() });
       
       if (response.status) {
+        setSuccessMessage(response.message); // Store the API message
         setIsSubmitted(true);
       } else {
         setError(response.message || 'Failed to send reset email. Please try again.');
@@ -96,10 +98,9 @@ export const ForgotPasswordComponent: React.FC = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Check Your Email</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Request Processed</h2>
             <p className="text-slate-600 mb-6">
-              We've sent a password reset link to{' '}
-              <span className="font-medium text-slate-900">{email}</span>
+              {successMessage || 'If the email address is registered with us, you will receive a password reset link shortly.'}
             </p>
             <p className="text-sm text-slate-500 mb-8">
               If you don't see the email, check your spam folder or try again with a different email address.
