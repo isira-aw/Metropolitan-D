@@ -115,6 +115,7 @@ export interface CreateJobCardRequest {
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD' | 'ASSIGNED' | 'TRAVELING';
 
 export interface MiniJobCardResponse {
+  updatedTime?: string;
   generatorName?: string;
   estimatedTime: string;
   miniJobCardId: string;

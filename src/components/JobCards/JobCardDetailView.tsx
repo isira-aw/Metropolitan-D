@@ -268,7 +268,7 @@ export const JobCardDetailView: React.FC<JobCardDetailViewProps> = ({
                         </div>
                         <div className="flex items-center space-x-1">
                           <Clock className="w-3 h-3" />
-                          <span>{formatTime(miniJob.updatedAt)}</span>
+                          <span>{formatTime(miniJob.updatedTime ?? "")}</span>
                         </div>
                         {miniJob.location && (
                           <div className="col-span-2">
