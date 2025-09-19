@@ -26,7 +26,6 @@ import { Modal } from "../UI/Modal";
 import { JobCardDetailView } from "./JobCardDetailView";
 import { apiService } from "../../services/api";
 
-
 // Enhanced Searchable Generator Select Component with API Integration
 interface SearchableGeneratorSelectProps {
   generators: GeneratorResponse[]; // Keep for initial load/fallback
@@ -45,8 +44,11 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredGenerators, setFilteredGenerators] = useState<GeneratorResponse[]>([]);
-  const [selectedGenerator, setSelectedGenerator] = useState<GeneratorResponse | null>(null);
+  const [filteredGenerators, setFilteredGenerators] = useState<
+    GeneratorResponse[]
+  >([]);
+  const [selectedGenerator, setSelectedGenerator] =
+    useState<GeneratorResponse | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -68,8 +70,8 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
 
     try {
       const response = await apiService.searchGenerators(term.trim());
-      
-      if (response.status && response.data) { // Changed from response.success to response.status
+
+      if (response.status && response.data) {
         setFilteredGenerators(response.data);
         setSearchError(null);
       } else {
@@ -112,8 +114,9 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
 
   // Find selected generator when value changes
   useEffect(() => {
-    const selected = initialGenerators.find((gen) => gen.generatorId === value) ||
-                    filteredGenerators.find((gen) => gen.generatorId === value);
+    const selected =
+      initialGenerators.find((gen) => gen.generatorId === value) ||
+      filteredGenerators.find((gen) => gen.generatorId === value);
     setSelectedGenerator(selected || null);
   }, [value, initialGenerators, filteredGenerators]);
 
@@ -139,6 +142,25 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
       searchInputRef.current.focus();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const selected =
+      initialGenerators.find((gen) => gen.generatorId === value) ||
+      filteredGenerators.find((gen) => gen.generatorId === value);
+
+    if (selected) {
+      setSelectedGenerator(selected);
+    } else if (value) {
+      // fetch single generator if not in local lists
+      apiService.getGenerator(value).then((res) => {
+        if (res.status && res.data) {
+          setSelectedGenerator(res.data);
+        }
+      });
+    } else {
+      setSelectedGenerator(null);
+    }
+  }, [value, initialGenerators, filteredGenerators]);
 
   const handleSelect = (generator: GeneratorResponse) => {
     onChange(generator.generatorId);
@@ -168,7 +190,7 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTerm = e.target.value;
     setSearchTerm(newTerm);
-    
+
     // Show loading immediately for better UX
     if (newTerm.trim().length >= 2) {
       setIsSearching(true);
@@ -225,7 +247,7 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
                 onChange={handleSearchChange}
                 placeholder="Type at least 2 characters to search..."
                 className={`w-full pl-10 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
-                  isSearching ? 'pr-10' : 'pr-3'
+                  isSearching ? "pr-10" : "pr-3"
                 }`}
               />
             </div>
@@ -236,9 +258,7 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
               </p>
             )}
             {searchError && (
-              <p className="text-xs text-red-600 mt-1">
-                {searchError}
-              </p>
+              <p className="text-xs text-red-600 mt-1">{searchError}</p>
             )}
           </div>
 
@@ -295,7 +315,8 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
                       <span className="font-medium">{generator.name}</span>
                       <span className="text-sm text-slate-500">
                         {generator.capacity} KW
-                        {generator.contactNumber && ` • ${generator.contactNumber}`}
+                        {generator.contactNumber &&
+                          ` • ${generator.contactNumber}`}
                       </span>
                     </div>
                   </button>
@@ -304,10 +325,9 @@ const SearchableGeneratorSelect: React.FC<SearchableGeneratorSelectProps> = ({
             ) : (
               <div className="px-3 py-4 text-slate-500 text-center">
                 <p className="text-sm">
-                  {searchTerm.trim() 
-                    ? `No generators found matching "${searchTerm}"` 
-                    : "No generators available"
-                  }
+                  {searchTerm.trim()
+                    ? `No generators found matching "${searchTerm}"`
+                    : "No generators available"}
                 </p>
               </div>
             )}
@@ -406,15 +426,15 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
   // Handle create job with 4 second loading
   const handleCreateJobWithLoading = async () => {
     if (isInternalCreating) return; // Prevent multiple clicks
-    
+
     setIsInternalCreating(true);
-    
+
     try {
       await handleCreateJob();
     } catch (error) {
-      console.error('Error creating job:', error);
+      console.error("Error creating job:", error);
     }
-    
+
     // Ensure minimum 4 second loading time
     setTimeout(() => {
       setIsInternalCreating(false);
@@ -489,7 +509,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowDropdown(
-                            showDropdown === job.jobCardId ? null : job.jobCardId
+                            showDropdown === job.jobCardId
+                              ? null
+                              : job.jobCardId
                           );
                         }}
                         className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
@@ -530,7 +552,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
 
                 <div className="flex items-start justify-between mb-4 pr-8">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${typeStyle.iconBg}`}>
+                    <div
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${typeStyle.iconBg}`}
+                    >
                       <div className={typeStyle.iconColor}>
                         {getJobTypeIcon(job.jobType)}
                       </div>
@@ -562,7 +586,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-slate-600">
                     <Users className="w-4 h-4" />
-                    <span>{job.assignedEmployees.length} employees assigned</span>
+                    <span>
+                      {job.assignedEmployees.length} employees assigned
+                    </span>
                   </div>
                 </div>
 
@@ -695,7 +721,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
           resetForm();
         }}
         title="Create New Job Card"
-        size="lg"
+        size="xl"
       >
         <div className="flex flex-col md:flex-row gap-4">
           {/* Left Column */}
@@ -814,12 +840,15 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                   }}
                   className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Min</option>
-                  {Array.from({ length: 60 }, (_, i) => (
-                    <option key={i} value={i.toString().padStart(2, "0")}>
-                      {i.toString().padStart(2, "0")}
-                    </option>
-                  ))}
+                  <option value="00">Min</option>
+                  {Array.from({ length: 60 / 5 }, (_, i) => {
+                    const val = (i * 5).toString().padStart(2, "0");
+                    return (
+                      <option key={val} value={val}>
+                        {val}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -830,7 +859,8 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
             {/* Employee Selection */}
             <div className="space-y-4">
               <label className="block text-sm font-medium text-slate-700">
-                Assign Employees (max 5) - {formData.employeeEmails.length} selected
+                Assign Employees (max 5) - {formData.employeeEmails.length}{" "}
+                selected
               </label>
 
               {/* Search Input */}
@@ -858,7 +888,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <div className="flex flex-wrap gap-2">
                     {formData.employeeEmails.map((email) => {
-                      const employee = employees.find((emp) => emp.email === email);
+                      const employee = employees.find(
+                        (emp) => emp.email === email
+                      );
                       return employee ? (
                         <span
                           key={email}
@@ -893,7 +925,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                       >
                         <input
                           type="checkbox"
-                          checked={formData.employeeEmails.includes(employee.email)}
+                          checked={formData.employeeEmails.includes(
+                            employee.email
+                          )}
                           onChange={() => handleEmployeeToggle(employee.email)}
                           disabled={
                             !formData.employeeEmails.includes(employee.email) &&
@@ -916,10 +950,9 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                   <div className="p-4 text-center text-slate-500">
                     <Users className="w-6 h-6 text-slate-300 mx-auto mb-2" />
                     <p className="text-sm">
-                      {employeeSearchTerm 
-                        ? `No employees found matching "${employeeSearchTerm}"` 
-                        : "No employees available"
-                      }
+                      {employeeSearchTerm
+                        ? `No employees found matching "${employeeSearchTerm}"`
+                        : "No employees available"}
                     </p>
                   </div>
                 )}
@@ -971,7 +1004,7 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
             }
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg transition-colors flex items-center space-x-2 min-w-[140px] justify-center"
           >
-            {(isInternalCreating || creating) ? (
+            {isInternalCreating || creating ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Creating...</span>
