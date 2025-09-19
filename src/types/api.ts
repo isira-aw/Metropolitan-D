@@ -86,6 +86,12 @@ export interface CreateGeneratorRequest {
 
 // Job Card Types - Updated to include VISIT
 export interface JobCardResponse {
+  title: string;
+  description: string;
+  assignedTo: string;
+  priority: string;
+  scheduledDate: string;
+  status: string;
   jobCardId: string;
   jobId: string;
   generator: GeneratorResponse;
