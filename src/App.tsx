@@ -11,6 +11,7 @@ import { Generators } from './pages/Generators';
 import { JobCards } from './pages/JobCards';
 import { MyTasks } from './pages/MyTasks';
 import { ActivityLogs } from './pages/ActivityLogs';
+import { Report } from './pages/Report'; // Add the Report import
 import { ForgotPasswordComponent } from './components/frogetpassword';
 import { ResetPasswordComponent } from './components/Resetpasswordcom';
 
@@ -110,6 +111,12 @@ function AppRoutes() {
           </AdminOnlyRoute>
         } />
         
+        <Route path="reports" element={
+          <AdminOnlyRoute>
+            <Report />
+          </AdminOnlyRoute>
+        } />
+        
         <Route path="activity" element={
           <AdminOnlyRoute>
             <ActivityLogs />
@@ -118,12 +125,6 @@ function AppRoutes() {
         
         {/* Add more admin-only routes here as needed */}
         {/* 
-        <Route path="reports" element={
-          <AdminOnlyRoute>
-            <Reports />
-          </AdminOnlyRoute>
-        } />
-        
         <Route path="settings" element={
           <AdminOnlyRoute>
             <Settings />
