@@ -8,7 +8,7 @@ import {
   CheckSquare,
   Activity,
   LogOut,
-  // Settings,
+  FileBarChart, // New icon for Reports
   Menu,
   X,
 } from "lucide-react";
@@ -36,6 +36,7 @@ export const Sidebar: React.FC = () => {
     { to: "/generators", icon: Zap, label: "Generators" },
     { to: "/jobs", icon: ClipboardList, label: "Job Cards" },
     // { to: "/tasks", icon: CheckSquare, label: "All Tasks" },
+    { to: "/reports", icon: FileBarChart, label: "Reports" }, // New Reports section
     { to: "/activity", icon: Activity, label: "Activity Logs" },
   ];
 

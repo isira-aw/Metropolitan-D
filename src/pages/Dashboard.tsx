@@ -1,4 +1,4 @@
-// Complete Dashboard Component with both Time Tracking and OT Reports
+// Simplified Dashboard Component without Reports
 // File: src/pages/Dashboard.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -7,20 +7,15 @@ import {
   Zap,
   ClipboardList,
   CheckSquare,
-  Clock,
-  Search,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/api";
 import {
   MiniJobCardResponse,
   LogResponse,
-  EmployeeResponse,
 } from "../types/api";
 import { LoadingSpinner } from "../components/UI/LoadingSpinner";
 import { StatusBadge } from "../components/UI/StatusBadge";
-import { EmployeeReportSection } from "../components/Dashboard/EmployeeReportSection";
-import { EmployeeOTReportSection } from "../components/Dashboard/EmployeeOTReportSection";
 import { format } from "date-fns-tz";
 
 interface DashboardStats {
@@ -31,8 +26,6 @@ interface DashboardStats {
   pendingTasks: number;
   completedTasks: number;
 }
-
-type ReportTab = "time-tracking" | "overtime";
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -46,19 +39,18 @@ export const Dashboard: React.FC = () => {
   });
   const [recentTasks, setRecentTasks] = useState<MiniJobCardResponse[]>([]);
   const [recentActivity, setRecentActivity] = useState<LogResponse[]>([]);
-  const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeReportTab, setActiveReportTab] =
-    useState<ReportTab>("time-tracking");
 
   useEffect(() => {
     loadDashboardData();
   }, [user]);
+
   const getSriLankanToday = useCallback(() => {
     return format(new Date(), "yyyy-MM-dd", {
       timeZone: "Asia/Colombo",
     });
   }, []);
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -98,11 +90,6 @@ export const Dashboard: React.FC = () => {
 
       if (logsRes.status) {
         setRecentActivity(logsRes.data?.slice(0, 10) || []);
-      }
-
-      // Set employees for report component
-      if (employeesRes.status && employeesRes.data) {
-        setEmployees(employeesRes.data);
       }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -176,61 +163,6 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Reports Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        {/* Reports Header */}
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">
-            Employee Reports
-          </h2>
-          <p className="text-slate-600 text-sm">
-            Generate detailed reports for employee time tracking and overtime
-            analysis
-          </p>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="mb-6">
-          <div className="border-b border-slate-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveReportTab("time-tracking")}
-                className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
-                  activeReportTab === "time-tracking"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <Search className="h-4 w-4" />
-                Time Tracking Report
-              </button>
-              <button
-                onClick={() => setActiveReportTab("overtime")}
-                className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
-                  activeReportTab === "overtime"
-                    ? "border-orange-500 text-orange-600"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <Clock className="h-4 w-4" />
-                Overtime Report
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="min-h-[400px]">
-          {activeReportTab === "time-tracking" && (
-            <EmployeeReportSection employees={employees} />
-          )}
-
-          {activeReportTab === "overtime" && (
-            <EmployeeOTReportSection employees={employees} />
-          )}
-        </div>
       </div>
 
       {/* Recent Tasks and Activity */}
