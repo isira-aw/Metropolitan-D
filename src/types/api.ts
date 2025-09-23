@@ -312,8 +312,12 @@ export interface OTRecord {
   morningOT: string;
   eveningOT: string;
   dailyTotalOT: string;
+  onHoldTime: string;
+  assignedTime: string;
+  inProgressTime: string;
+  currentStatus: string;
+  lastStatus: string;
 }
-
 export interface OTReportResponse {
   data: OTReportResponse;
   employeeEmail: string;
@@ -324,7 +328,11 @@ export interface OTReportResponse {
   totalMorningOT: string;
   totalEveningOT: string;
   totalOT: string;
+  totalOnHoldTime: string;
+  totalAssignedTime: string;
+  totalInProgressTime: string;
 }
+
 
 // end section button
 
