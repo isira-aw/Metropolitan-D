@@ -303,6 +303,8 @@ export interface OTReportRequest {
   endDate: string;
 }
 
+// Updated interfaces to match the backend response with location arrays
+
 export interface OTRecord {
   date: string;
   firstTime: string;
@@ -317,7 +319,10 @@ export interface OTRecord {
   inProgressTime: string;
   currentStatus: string;
   lastStatus: string;
+  allLocations: string[];
+  locationsSummary: string;
 }
+
 export interface OTReportResponse {
   data: OTReportResponse;
   employeeEmail: string;
@@ -332,7 +337,6 @@ export interface OTReportResponse {
   totalAssignedTime: string;
   totalInProgressTime: string;
 }
-
 
 // end section button
 

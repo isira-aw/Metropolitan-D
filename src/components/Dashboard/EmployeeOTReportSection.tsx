@@ -6,6 +6,7 @@ import {
   User,
   Clock,
   MapPin,
+  Route,
   ExternalLink,
 } from "lucide-react";
 import { apiService } from "../../services/api";
@@ -13,34 +14,12 @@ import {
   EmployeeResponse,
   OTReportRequest,
   OTRecord,
+  OTReportResponse,
 } from "../../types/api";
 import { LoadingSpinner } from "../UI/LoadingSpinner";
 
 interface EmployeeOTReportSectionProps {
   employees: EmployeeResponse[];
-}
-
-interface OTReportData {
-  employeeEmail: string;
-  employeeName: string;
-  startDate: string;
-  endDate: string;
-  otRecords: OTRecord[];
-  totalMorningOT: string;
-  totalEveningOT: string;
-  totalOT: string;
-  totalOnHoldTime: string;
-  totalAssignedTime: string;
-  totalInProgressTime: string;
-}
-
-// Updated OTRecord interface to match new response
-interface ExtendedOTRecord extends OTRecord {
-  onHoldTime: string;
-  assignedTime: string;
-  inProgressTime: string;
-  currentStatus: string;
-  lastStatus: string;
 }
 
 export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = ({
@@ -49,7 +28,7 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [reportData, setReportData] = useState<OTReportData | null>(null);
+  const [reportData, setReportData] = useState<OTReportResponse | null>(null);
   const [reportLoading, setReportLoading] = useState<boolean>(false);
   const [reportError, setReportError] = useState<string>("");
 
@@ -92,12 +71,12 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
       console.log("Raw OT API Response:", response);
 
       // Handle the response - it could be wrapped or direct
-      let data: OTReportData | null = null;
+      let data: OTReportResponse | null = null;
       
       if (response && response.data) {
         data = response.data;
       } else if (response && response.employeeEmail) {
-        data = response as unknown as OTReportData;
+        data = response as OTReportResponse;
       }
 
       if (data && data.employeeEmail) {
@@ -120,26 +99,42 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
   };
 
   const formatTime = (timeString: string): string => {
-    if (!timeString || timeString === "00:00") return "00:00:00";
-    // Handle both HH:MM and HH:MM:SS formats
+    if (!timeString || timeString === "00:00") return "00:00";
+    // Handle both HH:MM and HH:MM:SS formats, return only HH:MM
     const parts = timeString.split(":");
-    if (parts.length === 2) {
-      return `${timeString}:00`;
+    if (parts.length >= 2) {
+      const hours = parts[0].padStart(2, '0');
+      const minutes = parts[1].padStart(2, '0');
+      return `${hours}:${minutes}`;
     }
     return timeString;
   };
 
-  // Function to open Google Maps with coordinates
-  const openGoogleMaps = (coordinates: string): void => {
-    if (!coordinates) return;
+  // Function to open Google Maps route with all locations
+  const openLocationRoute = (allLocations: string[]): void => {
+    if (!allLocations || allLocations.length === 0) return;
     
-    // Extract lat,lng from coordinates string
-    const coords = coordinates.split(',');
-    if (coords.length >= 2) {
+    // Filter out empty or invalid coordinates
+    const validLocations = allLocations.filter(location => {
+      if (!location) return false;
+      const coords = location.split(',');
+      return coords.length >= 2 && !isNaN(parseFloat(coords[0])) && !isNaN(parseFloat(coords[1]));
+    });
+
+    if (validLocations.length === 0) return;
+
+    // Create Google Maps route URL
+    if (validLocations.length === 1) {
+      // Single location - just show the location
+      const coords = validLocations[0].split(',');
       const lat = coords[0].trim();
       const lng = coords[1].trim();
-      const mapsUrl = `https://www.google.com/maps/dir/${lat},${lng}`;
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
       window.open(mapsUrl, '_blank');
+    } else {
+      // Multiple locations - create route
+      const routeUrl = `https://www.google.com/maps/dir/${validLocations.join('/')}/`;
+      window.open(routeUrl, '_blank');
     }
   };
 
@@ -153,6 +148,12 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
       return `${lat}, ${lng}`;
     }
     return coordinates;
+  };
+
+  // Function to get location count for display
+  const getLocationCount = (allLocations: string[]): number => {
+    if (!allLocations) return 0;
+    return allLocations.filter(location => location && location.trim().length > 0).length;
   };
 
   const parseTimeToMinutes = (timeString: string): number => {
@@ -267,99 +268,6 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
             </p>
           </div>
 
-          {/* Summary Cards */}
-          {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Morning OT</p>
-                  <p className="text-lg font-bold text-blue-900">
-                    {formatTime(reportData.totalMorningOT)}
-                  </p>
-                  <p className="text-xs text-blue-600">
-                    {formatMinutesToHours(parseTimeToMinutes(reportData.totalMorningOT))}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-green-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-green-900">Evening OT</p>
-                  <p className="text-lg font-bold text-green-900">
-                    {formatTime(reportData.totalEveningOT)}
-                  </p>
-                  <p className="text-xs text-green-600">
-                    {formatMinutesToHours(parseTimeToMinutes(reportData.totalEveningOT))}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-orange-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-orange-900">Total OT</p>
-                  <p className="text-lg font-bold text-orange-900">
-                    {formatTime(reportData.totalOT)}
-                  </p>
-                  <p className="text-xs text-orange-600">
-                    {formatMinutesToHours(parseTimeToMinutes(reportData.totalOT))}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-yellow-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-900">On Hold</p>
-                  <p className="text-lg font-bold text-yellow-900">
-                    {formatTime(reportData.totalOnHoldTime)}
-                  </p>
-                  <p className="text-xs text-yellow-600">
-                    {formatMinutesToHours(parseTimeToMinutes(reportData.totalOnHoldTime))}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-purple-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-purple-900">Assigned</p>
-                  <p className="text-lg font-bold text-purple-900">
-                    {formatTime(reportData.totalAssignedTime)}
-                  </p>
-                  <p className="text-xs text-purple-600">
-                    {formatMinutesToHours(parseTimeToMinutes(reportData.totalAssignedTime))}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-indigo-600 mr-2" />
-                <div>
-                  <p className="text-sm font-medium text-indigo-900">In Progress</p>
-                  <p className="text-lg font-bold text-indigo-900">
-                    {formatTime(reportData.totalInProgressTime)}
-                  </p>
-                  <p className="text-xs text-indigo-600">
-                    {formatMinutesToHours(parseTimeToMinutes(reportData.totalInProgressTime))}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div> */}
-
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-slate-200 rounded-lg">
@@ -368,8 +276,7 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">Date</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">First Time</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">Last Time</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">First Location</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">Last Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">Daily Route</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">Morning OT</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">Evening OT</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b">Daily Total</th>
@@ -381,7 +288,7 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {reportData.otRecords && reportData.otRecords.length > 0 ? (
-                  reportData.otRecords.map((record: ExtendedOTRecord, index) => (
+                  reportData.otRecords.map((record: OTRecord, index) => (
                     <tr key={`${record.date}-${index}`} className={index % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                       <td className="px-4 py-4 text-sm font-medium text-slate-900">
                         {formatDate(record.date)}
@@ -393,32 +300,34 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
                         {formatTime(record.lastTime)}
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-900">
-                        {record.firstLocation && (
-                          <button
-                            onClick={() => openGoogleMaps(record.firstLocation)}
-                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 hover:underline"
-                            title={formatCoordinates(record.firstLocation)}
-                          >
-                            <MapPin className="h-3 w-3" />
-                            <span className="text-xs">View Map</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-slate-900">
-                        {record.lastLocation && record.firstLocation !== record.lastLocation && (
-                          <button
-                            onClick={() => openGoogleMaps(record.lastLocation)}
-                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 hover:underline"
-                            title={formatCoordinates(record.lastLocation)}
-                          >
-                            <MapPin className="h-3 w-3" />
-                            <span className="text-xs">View Map</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </button>
-                        )}
-                        {record.firstLocation === record.lastLocation && (
-                          <span className="text-xs text-slate-400">Same location</span>
+                        {record.allLocations && record.allLocations.length > 0 ? (
+                          <div className="flex flex-col space-y-2">
+                            <button
+                              onClick={() => openLocationRoute(record.allLocations)}
+                              className="flex items-center space-x-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                              title={`View route through ${getLocationCount(record.allLocations)} locations`}
+                            >
+                              <Route className="h-4 w-4" />
+                              <div className="flex flex-col items-start">
+                                <span className="text-xs font-medium">
+                                  View Route ({getLocationCount(record.allLocations)} locations)
+                                </span>
+                                {/* {record.locationsSummary && (
+                                  <span className="text-xs text-blue-600 truncate max-w-32" title={record.locationsSummary}>
+                                    {record.locationsSummary.length > 30 
+                                      ? `${record.locationsSummary.substring(0, 30)}...` 
+                                      : record.locationsSummary}
+                                  </span>
+                                )} */}
+                              </div>
+                              <ExternalLink className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-1 text-slate-400">
+                            <MapPin className="h-4 w-4" />
+                            <span className="text-xs">No locations</span>
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-4 text-sm font-mono text-blue-700">
@@ -444,18 +353,13 @@ export const EmployeeOTReportSection: React.FC<EmployeeOTReportSectionProps> = (
                           <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 font-medium">
                             {record.currentStatus}
                           </span>
-                          {record.lastStatus && record.lastStatus !== record.currentStatus && (
-                            <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                              Prev: {record.lastStatus}
-                            </span>
-                          )}
                         </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={12} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={11} className="px-4 py-8 text-center text-slate-500">
                       No overtime records found for this period
                     </td>
                   </tr>
