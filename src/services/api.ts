@@ -180,12 +180,14 @@ class ApiService {
     return this.handleResponse<GeneratorResponse[]>(response);
   }
 
-  async generateEmployeeOTReport(request: OTReportRequest): Promise<OTReportResponse> {
+  async generateEmployeeOTReport(
+    request: OTReportRequest
+  ): Promise<OTReportResponse> {
     try {
       const response = await fetch(`${BASE_URL}/reports/employee-ot-report`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...this.getAuthHeaders(),
         },
         body: JSON.stringify(request),
@@ -193,57 +195,66 @@ class ApiService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Failed to generate OT report'}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${
+            errorData.message || "Failed to generate OT report"
+          }`
+        );
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error generating OT report:', error);
+      console.error("Error generating OT report:", error);
       throw error;
     }
   }
 
   // End Session
-  async endWorkSession(request: EndSessionRequest): Promise<EndSessionResponse> {
+  async endWorkSession(
+    request: EndSessionRequest
+  ): Promise<EndSessionResponse> {
     try {
       const params = new URLSearchParams({
         employeeEmail: request.employeeEmail,
         date: request.date,
         endTime: request.endTime,
-        endLocation: request.endLocation
+        endLocation: request.endLocation,
       });
 
-      const response = await fetch(`${BASE_URL}/ot-time/end-session?${params}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...this.getAuthHeaders(),
-        },
-      });
+      const response = await fetch(
+        `${BASE_URL}/ot-time/end-session?${params}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...this.getAuthHeaders(),
+          },
+        }
+      );
 
       if (response.ok) {
         const message = await response.text();
         return {
           success: true,
-          message: message
+          message: message,
         };
       } else {
         const errorMessage = await response.text();
         return {
           success: false,
-          message: errorMessage || 'Failed to end session'
+          message: errorMessage || "Failed to end session",
         };
       }
     } catch (error) {
-      console.error('Error ending work session:', error);
+      console.error("Error ending work session:", error);
       return {
         success: false,
-        message: 'Network error occurred. Please try again.'
+        message: "Network error occurred. Please try again.",
       };
     }
   }
-  
+
   // Job Cards
   async getAllJobCards(): Promise<ApiResponse<JobCardResponse[]>> {
     const response = await fetch(`${BASE_URL}/jobcards`, {
@@ -300,6 +311,33 @@ class ApiService {
         ? "Job card deleted successfully"
         : "Failed to delete job card",
     };
+  }
+
+  async updateJobCard(
+    jobCardId: string,
+    updateData: {
+      generatorId: string;
+      jobType: "SERVICE" | "REPAIR" | "VISIT";
+      date: string;
+      estimatedTime: string;
+      employeeEmails: string[];
+    }
+  ): Promise<ApiResponse<JobCardResponse>> {
+    try {
+      const response = await fetch(`${BASE_URL}/jobcards/${jobCardId}`, {
+        method: "PUT",
+        headers: {
+          ...this.getAuthHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      return this.handleResponse<JobCardResponse>(response);
+    } catch (error) {
+      console.error("Error updating job card:", error);
+      throw error;
+    }
   }
 
   async createRepairJob(
