@@ -15,6 +15,7 @@ import {
   Eye,
   MapPin,
   Loader2,
+  Edit,
 } from "lucide-react";
 import {
   JobCardResponse,
@@ -24,6 +25,7 @@ import {
 } from "../../types/api";
 import { Modal } from "../UI/Modal";
 import { JobCardDetailView } from "./JobCardDetailView";
+import { EditJobCardModal } from "./EditJobCardModal";
 import { apiService } from "../../services/api";
 
 // Enhanced Searchable Generator Select Component with API Integration
@@ -368,7 +370,9 @@ interface JobCardsDisplayProps {
   handleEmployeeToggle: (email: string) => void;
   handleCreateJob: () => Promise<void>;
   resetForm: () => void;
-  creating?: boolean; // Added optional creating state
+  creating?: boolean;
+  // Add this new prop for handling job updates
+  onJobUpdated?: (updatedJobCard: JobCardResponse) => void;
 }
 
 export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
@@ -399,11 +403,16 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
   handleCreateJob,
   resetForm,
   creating = false, // Default to false if not provided
+  onJobUpdated, // Add the new prop
 }) => {
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedJobCard, setSelectedJobCard] =
     useState<JobCardResponse | null>(null);
   const [isInternalCreating, setIsInternalCreating] = useState(false);
+
+  // Add edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [jobToEdit, setJobToEdit] = useState<JobCardResponse | null>(null);
 
   const formatTime = (timeString: string) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
@@ -421,6 +430,19 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
   const closeDetailView = () => {
     setShowDetailView(false);
     setSelectedJobCard(null);
+  };
+
+  // Add edit modal functions
+  const openEditModal = (job: JobCardResponse) => {
+    setJobToEdit(job);
+    setShowEditModal(true);
+    setShowDropdown(null);
+  };
+
+  const handleJobUpdated = (updatedJobCard: JobCardResponse) => {
+    if (onJobUpdated) {
+      onJobUpdated(updatedJobCard);
+    }
   };
 
   // Handle create job with 4 second loading
@@ -539,6 +561,13 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
                           <span>View Details</span>
                         </button>
                         <button
+                          onClick={() => openEditModal(job)}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span>Edit Job Card</span>
+                        </button>
+                        <button
                           onClick={() => openDeleteModal(job)}
                           className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors"
                         >
@@ -629,6 +658,21 @@ export const JobCardsDisplay: React.FC<JobCardsDisplayProps> = ({
         <JobCardDetailView
           jobCard={selectedJobCard}
           onClose={closeDetailView}
+        />
+      )}
+
+      {/* Edit Job Card Modal */}
+      {showEditModal && jobToEdit && (
+        <EditJobCardModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setJobToEdit(null);
+          }}
+          jobCard={jobToEdit}
+          generators={generators}
+          employees={employees}
+          onJobUpdated={handleJobUpdated}
         />
       )}
 

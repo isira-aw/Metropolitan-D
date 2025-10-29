@@ -1,3 +1,5 @@
+// Updated src/pages/JobCards.tsx - Add these changes to your existing file
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus, Settings } from "lucide-react";
 import { format } from "date-fns-tz";
@@ -14,18 +16,16 @@ import { JobCardsFilters } from "../components/JobCards/JobCardsFilters";
 
 export const JobCards: React.FC = () => {
   const [jobCards, setJobCards] = useState<JobCardResponse[]>([]);
-  const [generators, ] = useState<GeneratorResponse[]>([]); // Keep empty array for compatibility
+  const [generators, ] = useState<GeneratorResponse[]>([]);
   const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  // Updated to include VISIT type
   const [filterType, setFilterType] = useState<"ALL" | "SERVICE" | "REPAIR" | "VISIT">("ALL");
   const [filterDate, setFilterDate] = useState<string>("");
-  const [filterGeneratorName, setFilterGeneratorName] = useState<string>(""); // New generator filter state
+  const [filterGeneratorName, setFilterGeneratorName] = useState<string>("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<JobCardResponse | null>(null);
   const [deleting, setDeleting] = useState(false);
-  // Updated to include VISIT type
   const [jobType, setJobType] = useState<"SERVICE" | "REPAIR" | "VISIT">("SERVICE");
   const [formData, setFormData] = useState<CreateJobCardRequest>({
     generatorId: "",
@@ -63,9 +63,6 @@ export const JobCards: React.FC = () => {
       const matchesGenerator = !filterGeneratorName || 
         card.generator.name.toLowerCase().includes(filterGeneratorName.toLowerCase());
       
-      // Note: Date filtering is handled by backend API calls, not here
-      // This is just for additional client-side filtering if needed
-      
       return matchesType && matchesGenerator;
     });
   }, [jobCards, filterType, filterGeneratorName]);
@@ -99,7 +96,6 @@ export const JobCards: React.FC = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      // Removed getAllGenerators() call - only load employees now
       const employeesRes = await apiService.getAllEmployees();
 
       if (employeesRes.status && employeesRes.data) {
@@ -146,10 +142,8 @@ export const JobCards: React.FC = () => {
     setFilterDate(date);
 
     if (date) {
-      // Load job cards for specific date from backend
       await loadJobCardsByDate(date);
     } else {
-      // Load all job cards when date filter is cleared
       await loadAllJobCards();
     }
   };
@@ -157,7 +151,6 @@ export const JobCards: React.FC = () => {
   const handleCreateJob = async () => {
     try {
       let response;
-      // Updated to handle VISIT job type
       switch (jobType) {
         case "SERVICE":
           response = await apiService.createServiceJob(formData);
@@ -173,7 +166,6 @@ export const JobCards: React.FC = () => {
       }
 
       if (response.status) {
-        // Refresh based on current filters
         if (filterDate) {
           await loadJobCardsByDate(filterDate);
         } else {
@@ -195,7 +187,6 @@ export const JobCards: React.FC = () => {
       const response = await apiService.deleteJobCard(jobToDelete.jobCardId);
 
       if (response.status) {
-        // Refresh based on current filters
         if (filterDate) {
           await loadJobCardsByDate(filterDate);
         } else {
@@ -204,15 +195,28 @@ export const JobCards: React.FC = () => {
         setShowDeleteModal(false);
         setJobToDelete(null);
       } else {
-        alert(
-          "Failed to delete job card: " + (response.message || "Unknown error")
-        );
+        alert("Failed to delete job card: " + (response.message || "Unknown error"));
       }
     } catch (error) {
       console.error("Error deleting job:", error);
       alert("Failed to delete job card. Please try again.");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // Add this new function to handle job updates
+  const handleJobUpdated = async (updatedJobCard: JobCardResponse) => {
+    try {
+      // Update the job card in the local state
+      setJobCards(prevJobCards =>
+        prevJobCards.map(job =>
+          job.jobCardId === updatedJobCard.jobCardId ? updatedJobCard : job
+        )
+      );
+      console.log('Job card updated successfully');
+    } catch (error) {
+      console.error('Error handling job card update:', error);
     }
   };
 
@@ -231,7 +235,7 @@ export const JobCards: React.FC = () => {
       ...prev,
       employeeEmails: prev.employeeEmails.includes(email)
         ? prev.employeeEmails.filter((e) => e !== email)
-        : [...prev.employeeEmails, email].slice(0, 5), // Max 5 employees
+        : [...prev.employeeEmails, email].slice(0, 5),
     }));
   };
 
@@ -340,6 +344,8 @@ export const JobCards: React.FC = () => {
         handleEmployeeToggle={handleEmployeeToggle}
         handleCreateJob={handleCreateJob}
         resetForm={resetForm}
+        // Add the new prop for handling job updates
+        onJobUpdated={handleJobUpdated}
       />
 
       {!dateFilterLoading && filteredJobCards.length === 0 && (
