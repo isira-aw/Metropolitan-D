@@ -424,6 +424,23 @@ class ApiService {
   //   return this.handleResponse<MiniJobCardResponse[]>(response);
   // }
 
+  async canEditStatus(): Promise<ApiResponse<boolean>> {
+    try {
+      const response = await fetch(`${BASE_URL}/minijobcards/can-edit-status`, {
+        method: "GET",
+        headers: this.getAuthHeaders(), // This includes the JWT token
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking edit status eligibility:", error);
+      throw error;
+    }
+  }
   async getMiniJobCardsByStatus(
     status: string
   ): Promise<ApiResponse<MiniJobCardResponse[]>> {

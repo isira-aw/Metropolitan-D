@@ -1,5 +1,5 @@
 // components/MyTasks/TasksDisplay.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { format } from "date-fns-tz";
 import {
   Clock,
@@ -21,6 +21,7 @@ import {
 } from "../../types/api";
 import { StatusBadge } from "../UI/StatusBadge";
 import { Modal } from "../UI/Modal";
+import { apiService } from "../../services/api";
 
 // Enhanced interface
 interface EnhancedMiniJobCardResponse extends MiniJobCardResponse {
@@ -74,7 +75,7 @@ interface TasksDisplayProps {
     currentStatus: string
   ) => { value: string; label: string }[];
   getOrdinalSuffix: (position: number) => string;
-    canEditTask: (task: EnhancedMiniJobCardResponse) => boolean;
+  canEditTask: (task: EnhancedMiniJobCardResponse) => boolean;
   hasBlockingStatus: boolean;
   activeTaskId: string | null;
 }
@@ -154,6 +155,27 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
     await onSaveUpdate();
   };
 
+  const [canEditTasks, setCanEditTasks] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(true);
+
+  // Check eligibility on mount
+  useEffect(() => {
+    const checkEligibility = async () => {
+      try {
+        setCheckingEligibility(true);
+        const response = await apiService.canEditStatus();
+        setCanEditTasks(response.data || false);
+      } catch (error) {
+        console.error("Error checking eligibility:", error);
+        setCanEditTasks(false);
+      } finally {
+        setCheckingEligibility(false);
+      }
+    };
+
+    checkEligibility();
+  }, []);
+
   return (
     <>
       {/* Simple Date Filter - Only Date Picker and Today Button */}
@@ -224,7 +246,9 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                   {getOrdinalSuffix(task.orderPosition)} Priority
                 </div>
               )}
-              <StatusBadge status={task.status === "ASSIGNED" ? "TRAVELING" : task.status} />
+              <StatusBadge
+                status={task.status === "ASSIGNED" ? "TRAVELING" : task.status}
+              />
             </div>
 
             {/* Task Header with Generator Info */}
@@ -380,8 +404,25 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
             )}
 
             {/* Action Button - Show for all tasks with proper status filtering */}
+            {/* Action Button */}
             <div className="mb-4">
-              {isToday(task.date) ? (
+              {checkingEligibility ? (
+                <div className="w-full py-2 px-4 rounded-lg text-center bg-gray-100">
+                  <span className="text-xs text-gray-600">Checking...</span>
+                </div>
+              ) : !canEditTasks ? (
+                <div className="w-full py-2 px-4 rounded-lg text-center bg-gray-200">
+                  <span className="text-xs font-medium text-gray-600">
+                    Session Ended - Cannot Edit
+                  </span>
+                </div>
+              ) : !isToday(task.date) ? (
+                <div className="w-full py-2 px-4 rounded-lg text-center bg-blue-100">
+                  <span className="text-xs font-medium text-blue-800">
+                    Not Today
+                  </span>
+                </div>
+              ) : (
                 <>
                   <button
                     onClick={() => onUpdateTask(task)}
@@ -416,10 +457,6 @@ export const TasksDisplay: React.FC<TasksDisplayProps> = ({
                     </p>
                   )}
                 </>
-              ) : (
-                <span className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors text-xs font-medium bg-blue-200 text-blue-800">
-                  Not Today
-                </span>
               )}
             </div>
 
